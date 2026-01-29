@@ -1,121 +1,82 @@
-# Ansiversa Mini-App Starter
+# FlashNote
 
-This repository is the official starter template for all **Ansiversa Mini-Apps**.  
-Every app in the Ansiversa ecosystem begins with this structure—clean, fast, and consistent.
+FlashNote is the Ansiversa mini-app for building flashcard decks, importing Quiz questions, and running focused study sessions.
 
-If you are a developer or contributor, you can use this template to build any app in the ecosystem.
+## Freeze status
 
----
+FlashNote V1 (Freeze Phase) — verification + bug fixes only.
 
-## 🚀 Features
+## Quick start
 
-- **Astro 5** — blazing-fast frontend framework  
-- **Tailwind CSS** — utility-first styling  
-- **@ansiversa/components** — shared UI library for unified design  
-- **Global Styles** — imported automatically from the components package  
-- **Clean File Structure** — easy to extend for any type of app  
-- **Ready for Deployment** — optimized for Vercel out of the box  
-
----
-
-## 📁 Project Structure
+1) Install dependencies
 
 ```
-app/
- ├── public/
- ├── src/
- │   ├── layouts/
- │   │   └── AppShell.astro
- │   └── pages/
- │       ├── index.astro
- │       └── login.astro
- ├── astro.config.mjs
- ├── package.json
- ├── tsconfig.json
- ├── postcss.config.cjs
- └── tailwind.config.cjs
+npm ci
 ```
 
----
+2) Configure env vars (see `src/env.d.ts` for the full list)
 
-## 🧩 Using Ansiversa Components
+- `ANSIVERSA_AUTH_SECRET`
+- `ANSIVERSA_SESSION_SECRET`
+- `ANSIVERSA_COOKIE_DOMAIN`
+- `PUBLIC_ROOT_APP_URL` (optional)
+- `PARENT_APP_URL` (optional)
+- `ANSIVERSA_WEBHOOK_SECRET` (dashboard + notifications)
+- `QUIZ_API_BASE_URL` (Quiz import)
+- `PARENT_NOTIFICATION_WEBHOOK_URL` (optional override)
 
-All apps share the same UI look and feel using:
+3) Run the app
 
-```ts
-import "@ansiversa/components/styles/global.css";
-import { WebLayout, AuthLayout } from "@ansiversa/components";
 ```
-
-This ensures:
-
-- Perfect consistency across **100+ apps**
-- Unified branding  
-- Fully reusable layouts and UI blocks  
-
----
-
-## ▶️ Running Locally
-
-Install dependencies:
-
-```bash
-npm install
-```
-
-Start the development server:
-
-```bash
 npm run dev
 ```
 
-Build for production:
+## How FlashNote works
 
-```bash
-npm run build
+- **Parent app** (ansiversa.com) handles auth, notifications, and dashboard aggregation.
+- **FlashNote** trusts the parent session cookie and uses shared shells + middleware.
+- Decks, cards, and reviews live in FlashNote’s Astro DB.
+- Quiz import is read-only from the Quiz app API.
+
+## Local dev without parent app
+
+Enable the DEV bypass in `.env` to inject a dummy session locally:
+
+```
+DEV_BYPASS_AUTH=true npm run dev
 ```
 
-Preview production build:
+Optional overrides:
 
-```bash
-npm run preview
+```
+DEV_BYPASS_USER_ID=dev-user
+DEV_BYPASS_EMAIL=dev@local
+DEV_BYPASS_ROLE_ID=1
 ```
 
----
+## First run checklist
 
-## 🌐 Deployment
+You should be able to:
 
-Ansiversa apps are optimized for **Vercel**:
+- Open `/` and see the FlashNote landing
+- Open `/decks` and create a deck
+- Open `/decks/[id]` and add cards
+- Open `/study/[deckId]` and review cards
+- Import from Quiz (requires `QUIZ_API_BASE_URL` and a valid session)
 
-- No configuration required
-- Astro server output ready
-- CI/CD supported automatically
+## Commands
 
-Just link your repo to Vercel → deploy.
+- `npm run dev`
+- `npm run typecheck`
+- `npm run build`
+- `npm run db:push`
 
----
+## Database workflow (standard)
 
-## 🔗 About Ansiversa
-
-Ansiversa is a curated ecosystem of 100+ premium mini-apps designed for learning, productivity, writing, creativity, utilities, wellness, and more.
-
-Each app shares:
-
-- One global design language  
-- One component system  
-- One identity  
-- Premium UX  
-
-You are currently viewing the official **starter template** that powers all apps.
+FlashNote uses file-based remote DB locally for consistency.
+`npm run dev` and `npm run build` run in `--remote` mode against `.astro/content.db`.
+Use `npm run db:push` as the single schema push command.
 
 ---
 
-## 🤝 Contributing
-
-If you wish to contribute to this template or suggest improvements, please open an issue or submit a pull request.
-
----
-
-## 📄 License
-
-MIT License — free to use and modify.
+Ansiversa motto: Make it simple — but not simpler.
