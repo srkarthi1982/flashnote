@@ -29,6 +29,8 @@ This file records what was built/changed so far for the flashnote repo. Read fir
 
 ## 3. Task Log (Newest first)
 
+- 2026-01-29 Updated .env.example with required prod vars and dev helper notes.
+
 - 2026-01-29 Fixed deck list Open button by switching to Alpine-bound anchor (AvButton SSR props are static).
 
 - 2026-01-29 Fixed remote db:push by aligning schema to existing FlashNote Turso DB columns and updating FlashNote DB env URL.
