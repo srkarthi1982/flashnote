@@ -1,12 +1,6 @@
 import { defineDb } from "astro:db";
-import {
-  FlashcardDecks,
-  Flashcards,
-  StudySessions,
-  FlashcardReviews,
-} from "./tables";
+import { FlashcardDecks, FlashcardReviews, Flashcards, StudySessions } from "./tables";
 
-// https://astro.build/db/config
 export default defineDb({
   tables: {
     FlashcardDecks,
