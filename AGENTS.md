@@ -29,6 +29,7 @@ This file records what was built/changed so far for the flashnote repo. Read fir
 
 ## 3. Task Log (Newest first)
 
+- 2026-01-29 Manual smoke test confirmed: Quiz completion triggers notifications ("Quiz completed", "Results saved") visible in parent `/notifications` UI.
 - 2026-01-29 Updated .env.example with required prod vars and dev helper notes.
 
 - 2026-01-29 Fixed deck list Open button by switching to Alpine-bound anchor (AvButton SSR props are static).
