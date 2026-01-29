@@ -1,16 +1,24 @@
 {
-  "name": "@ansiversa/app-starter",
+  "name": "@ansiversa/flashnote",
   "version": "1.0.0",
-  "private": false,
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "astro dev --remote",
+    "dev:local": "astro dev",
     "build": "astro build --remote",
+    "build:local": "astro build",
+    "typecheck": "astro check",
+    "typecheck:tsc": "tsc --noEmit",
+    "check": "npm run typecheck && npm run build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "build:remote": "astro build --remote",
+    "dev:remote": "astro dev --remote",
+    "db:push": "astro db push --remote"
   },
   "dependencies": {
-    "@ansiversa/components": "^0.0.75",
+    "@ansiversa/components": "^0.0.119",
     "@astrojs/alpinejs": "^0.4.9",
     "@astrojs/db": "^0.18.3",
     "@astrojs/vercel": "^9.0.2",
@@ -19,5 +27,9 @@
     "alpinejs": "^3.15.2",
     "astro": "^5.16.2",
     "tailwindcss": "^4.1.17"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.6",
+    "typescript": "^5.9.3"
   }
 }
