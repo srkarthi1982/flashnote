@@ -35,7 +35,7 @@ const description = "Review your flashcards with focus.";
               <p class="av-text-soft" x-text="`${$store.flashnote.study.reviewed} reviewed`"></p>
             </div>
             <div class="av-row-wrap">
-              <AvButton :href="`/decks/${deckKey}`" variant="ghost">Back to deck</AvButton>
+              <AvButton href={`/decks/${deckKey}`} variant="ghost">Back to deck</AvButton>
             </div>
           </div>
         </AvCard>
@@ -68,7 +68,7 @@ const description = "Review your flashcards with focus.";
 
           <div class="av-auth-stack-sm" x-show="!$store.flashnote.activeCard">
             <p class="av-text-soft">No cards available for study.</p>
-            <AvButton :href="`/decks/${deckKey}`" variant="ghost">Add cards</AvButton>
+            <AvButton href={`/decks/${deckKey}`} variant="ghost">Add cards</AvButton>
           </div>
         </AvCard>
 
@@ -77,7 +77,7 @@ const description = "Review your flashcards with focus.";
             <h2 class="av-card-heading">Session complete</h2>
             <p class="av-text-soft" x-text="`Reviewed ${$store.flashnote.study.reviewed} cards.`"></p>
             <div class="av-row-wrap">
-              <AvButton :href="`/decks/${deckKey}`">Back to deck</AvButton>
+              <AvButton href={`/decks/${deckKey}`}>Back to deck</AvButton>
             </div>
           </div>
         </AvCard>

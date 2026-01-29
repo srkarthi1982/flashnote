@@ -81,7 +81,7 @@ const description = "Create and manage your flashcard decks.";
                   </div>
                   <div class="av-row-wrap">
                     <p class="av-text-soft" x-text="`${deck.cardsCount ?? 0} cards`"></p>
-                    <AvButton size="sm" :href="`/decks/${deck.id}`">Open</AvButton>
+                    <a class="av-btn-primary av-btn-sm" x-bind:href="`/decks/${deck.id}`">Open</a>
                   </div>
                 </div>
               </div>

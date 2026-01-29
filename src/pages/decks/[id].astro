@@ -42,7 +42,7 @@ const description = "Review cards, add new ones, or import from Quiz.";
               <p class="av-text-soft" x-text="$store.flashnote.currentDeck?.description || 'No description yet.'"></p>
             </div>
             <div class="av-row-wrap">
-              <AvButton :href="`/study/${deckId}`">Start study</AvButton>
+              <AvButton href={`/study/${deckId}`}>Start study</AvButton>
             </div>
           </div>
         </AvCard>
