@@ -1,6 +1,6 @@
 export type FlashcardDeck = {
   id: number;
-  userId: string;
+  ownerId: string;
   title: string;
   description?: string | null;
   createdAt?: Date | string | null;

@@ -29,6 +29,7 @@ This file records what was built/changed so far for the flashnote repo. Read fir
 
 ## 3. Task Log (Newest first)
 
+- 2026-01-29 Fixed remote db:push by aligning schema to existing FlashNote Turso DB columns and updating FlashNote DB env URL.
 - 2026-01-29 Flushed app-starter into FlashNote and rebranded app metadata, README, and layouts.
 - 2026-01-29 Replaced starter example module with FlashNote DB schema, actions, Alpine store, and V1 pages (landing, decks, deck detail, study flow).
 - 2026-01-29 Added Quiz API import client plus parent notifications + dashboard activity hooks.
@@ -40,10 +41,22 @@ This file records what was built/changed so far for the flashnote repo. Read fir
 
 - 2026-01-29 `npm run typecheck` (pass; 1 TypeScript hint in `src/actions/baseRepository.ts`).
 - 2026-01-29 `npm run build` (pass).
-- 2026-01-29 `npm run db:push` (failed; see BLOCKED).
+- 2026-01-29 `npm run db:push` (pass after schema alignment).
 
 ---
 
-## BLOCKED
+## 5. db:push Investigation Notes
 
-- `npm run db:push` failed: "Cannot convert undefined or null to object" at `node_modules/drizzle-orm/libsql/session.js:190:17`.
+Initial failure (before env fix):
+- `npm run db:push` → "Cannot convert undefined or null to object" at `node_modules/drizzle-orm/libsql/session.js:190:17`.
+
+After adding remote DB env:
+- Detected schema mismatch against wrong DB (Resume Builder). Updated `ASTRO_DB_REMOTE_URL` to FlashNote DB.
+- Subsequent schema diff errors showed existing remote columns; aligned schema to:
+  - `FlashcardDecks`: ownerId, title, description, sourceType, sourceMeta, tags, isActive, createdAt, updatedAt
+  - `Flashcards`: deckId, displayOrder, front, back, hint, extra, isActive (kept new fields as optional)
+  - `StudySessions`: completedAt, totalCardsSeen, correctCount, wrongCount, summary
+  - `FlashcardReviews`: rating (text), dueAt, deckId
+
+Final run:
+- `npm run db:push` completed successfully.

@@ -37,7 +37,7 @@ export const buildFlashnoteDashboardSummary = async (
   const [{ total: decksRaw } = { total: 0 }] = await db
     .select({ total: count() })
     .from(FlashcardDecks)
-    .where(eq(FlashcardDecks.userId, userId));
+    .where(eq(FlashcardDecks.ownerId, userId));
 
   const [{ total: cardsRaw } = { total: 0 }] = await db
     .select({ total: count() })
@@ -52,14 +52,14 @@ export const buildFlashnoteDashboardSummary = async (
     .where(and(eq(FlashcardReviews.userId, userId), gte(FlashcardReviews.reviewedAt, todayStart)));
 
   const lastSessionRow = await db
-    .select({ endedAt: StudySessions.endedAt, startedAt: StudySessions.startedAt })
+    .select({ completedAt: StudySessions.completedAt, startedAt: StudySessions.startedAt })
     .from(StudySessions)
     .where(eq(StudySessions.userId, userId))
-    .orderBy(desc(StudySessions.endedAt), desc(StudySessions.startedAt), desc(StudySessions.id))
+    .orderBy(desc(StudySessions.completedAt), desc(StudySessions.startedAt), desc(StudySessions.id))
     .limit(1);
 
   const lastStudyAt =
-    toIso(lastSessionRow?.[0]?.endedAt) ?? toIso(lastSessionRow?.[0]?.startedAt) ?? null;
+    toIso(lastSessionRow?.[0]?.completedAt) ?? toIso(lastSessionRow?.[0]?.startedAt) ?? null;
 
   const lastImportRow = await db
     .select({ createdAt: Flashcards.createdAt })

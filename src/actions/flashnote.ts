@@ -32,7 +32,7 @@ const requireDeck = async (userId: string, deckId: number) => {
   const deck = await db
     .select()
     .from(FlashcardDecks)
-    .where(and(eq(FlashcardDecks.id, deckId), eq(FlashcardDecks.userId, userId)))
+    .where(and(eq(FlashcardDecks.id, deckId), eq(FlashcardDecks.ownerId, userId)))
     .get();
 
   if (!deck) {
@@ -144,7 +144,7 @@ export const flashnote = {
       const decks = await db
         .select()
         .from(FlashcardDecks)
-        .where(eq(FlashcardDecks.userId, user.id))
+        .where(eq(FlashcardDecks.ownerId, user.id))
         .orderBy(desc(FlashcardDecks.updatedAt), desc(FlashcardDecks.createdAt));
 
       const counts = await db
@@ -185,9 +185,10 @@ export const flashnote = {
       const [deck] = await db
         .insert(FlashcardDecks)
         .values({
-          userId: user.id,
+          ownerId: user.id,
           title,
           description,
+          isActive: true,
           createdAt: now,
           updatedAt: now,
         })
@@ -226,7 +227,7 @@ export const flashnote = {
       const [deck] = await db
         .update(FlashcardDecks)
         .set({ title, description, updatedAt: new Date() })
-        .where(and(eq(FlashcardDecks.id, id), eq(FlashcardDecks.userId, user.id)))
+        .where(and(eq(FlashcardDecks.id, id), eq(FlashcardDecks.ownerId, user.id)))
         .returning();
 
       return { deck };
@@ -264,7 +265,7 @@ export const flashnote = {
 
       await db
         .delete(FlashcardDecks)
-        .where(and(eq(FlashcardDecks.id, id), eq(FlashcardDecks.userId, user.id)));
+        .where(and(eq(FlashcardDecks.id, id), eq(FlashcardDecks.ownerId, user.id)));
 
       return { success: true };
     },
@@ -319,7 +320,7 @@ export const flashnote = {
       await db
         .update(FlashcardDecks)
         .set({ updatedAt: now })
-        .where(and(eq(FlashcardDecks.id, id), eq(FlashcardDecks.userId, user.id)));
+        .where(and(eq(FlashcardDecks.id, id), eq(FlashcardDecks.ownerId, user.id)));
 
       return { card };
     },
@@ -355,7 +356,7 @@ export const flashnote = {
         await db
           .update(FlashcardDecks)
           .set({ updatedAt: new Date() })
-          .where(and(eq(FlashcardDecks.id, Number(card.deckId)), eq(FlashcardDecks.userId, user.id)));
+          .where(and(eq(FlashcardDecks.id, Number(card.deckId)), eq(FlashcardDecks.ownerId, user.id)));
       }
 
       return { card: updated };
@@ -380,7 +381,7 @@ export const flashnote = {
         await db
           .update(FlashcardDecks)
           .set({ updatedAt: new Date() })
-          .where(and(eq(FlashcardDecks.id, Number(card.deckId)), eq(FlashcardDecks.userId, user.id)));
+          .where(and(eq(FlashcardDecks.id, Number(card.deckId)), eq(FlashcardDecks.ownerId, user.id)));
       }
 
       return { success: true };
@@ -452,7 +453,7 @@ export const flashnote = {
         await db
           .update(FlashcardDecks)
           .set({ updatedAt: now })
-          .where(and(eq(FlashcardDecks.id, id), eq(FlashcardDecks.userId, user.id)));
+          .where(and(eq(FlashcardDecks.id, id), eq(FlashcardDecks.ownerId, user.id)));
       }
 
       const imported = toInsert.length;
@@ -486,6 +487,11 @@ export const flashnote = {
           userId: user.id,
           deckId: id,
           startedAt: now,
+          completedAt: null,
+          totalCardsSeen: 0,
+          correctCount: 0,
+          wrongCount: 0,
+          summary: null,
         })
         .returning();
 
@@ -499,7 +505,7 @@ export const flashnote = {
     handler: async ({ cardId, rating, sessionId }, context: ActionAPIContext) => {
       const user = requireUser(context);
       const id = parseNumberId(cardId, "Card");
-      await requireCard(user.id, id);
+      const card = await requireCard(user.id, id);
 
       const lastReview = await db
         .select({
@@ -519,10 +525,11 @@ export const flashnote = {
         .insert(FlashcardReviews)
         .values({
           userId: user.id,
+          deckId: Number(card.deckId),
           cardId: id,
           sessionId: sessionIdValue,
-          rating,
-          nextReviewAt: schedule.nextReviewAt,
+          rating: String(rating),
+          dueAt: schedule.nextReviewAt,
           reviewedAt: now,
           easeFactor: schedule.easeFactor,
           intervalDays: schedule.intervalDays,
@@ -556,7 +563,7 @@ export const flashnote = {
       const now = new Date();
       await db
         .update(StudySessions)
-        .set({ endedAt: now })
+        .set({ completedAt: now })
         .where(and(eq(StudySessions.id, id), eq(StudySessions.userId, user.id)));
 
       const [{ total: reviewedRaw } = { total: 0 }] = await db
