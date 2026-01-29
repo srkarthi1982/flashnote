@@ -1,92 +1,45 @@
 ---
+import { AvButton, AvCard, AvContainer } from "@ansiversa/components";
 import AppShell from "../layouts/AppShell.astro";
-import { AvContainer, AvButton } from "@ansiversa/components";
 
 const title = "FlashNote – Ansiversa";
-const description = "Convert notes into flashcards instantly.";
+const description = "Capture, review, and remember with calm flashcard study flows.";
 ---
 
 <AppShell title={title} description={description}>
-  <!-- Hero -->
-  <section class="av-hero">
-    <AvContainer size="narrow" className="av-hero__content--narrow">
-      <div class="av-hero__content">
-        <div class="av-kicker">
-          <span>Learning · Ansiversa Mini App</span>
-        </div>
-        <h1 class="av-gradient-text">FlashNote</h1>
-        <p>
-          Convert notes into flashcards instantly.
-        </p>
-      </div>
-      <div class="av-cta-row">
-        <AvButton href="https://flashnote.ansiversa.com">Launch FlashNote</AvButton>
-      </div>
-    </AvContainer>
-  </section>
-
-  <!-- Problem -->
   <section class="av-section">
-    <AvContainer size="narrow">
-      <div class="av-section-header">
-        <h2 class="av-section-title">The problem it solves</h2>
-        <p class="av-section-lead">
-          Learning tools are scattered across tabs, apps, and messy notes.
-        </p>
-      </div>
-      <div class="av-section-body space-y-3 text-slate-300">
-        <p>FlashNote focuses on one part of your learning flow and keeps it clear.</p>
-      </div>
-    </AvContainer>
-  </section>
+    <AvContainer>
+      <div class="av-auth-stack-lg">
+        <AvCard className="av-auth-card">
+          <div class="av-auth-stack-md">
+            <div class="av-auth-stack-xs">
+              <p class="av-kicker">FlashNote</p>
+              <h1 class="av-section-title">Make every study session feel focused</h1>
+              <p class="av-text-soft">
+                Build decks quickly, import from Quiz, and keep review streaks simple with a clean study flow.
+              </p>
+            </div>
 
-  <!-- Why this mini app -->
-  <section class="av-section">
-    <AvContainer size="narrow">
-      <div class="av-section-header">
-        <h2 class="av-section-title">Why FlashNote feels different</h2>
-        <p class="av-section-lead">
-          A focused mini app inside the larger Ansiversa ecosystem.
-        </p>
-      </div>
-      <div class="av-section-body">
-        <ul class="space-y-2 text-slate-300 list-disc list-inside">
-          <li>Designed specifically for learners, students, and educators.</li>
-          <li>Removes distractions so you can focus on actual understanding.</li>
-          <li>Built on the fast, unified Ansiversa ecosystem.</li>
-        </ul>
-      </div>
-    </AvContainer>
-  </section>
+            <div class="av-row-wrap">
+              <AvButton href="/decks">Create deck</AvButton>
+              <AvButton href="/decks" variant="ghost">Import from Quiz</AvButton>
+            </div>
+          </div>
+        </AvCard>
 
-  <!-- How it works -->
-  <section class="av-section">
-    <AvContainer size="narrow">
-      <div class="av-section-header">
-        <h2 class="av-section-title">How it works</h2>
-        <p class="av-section-lead">
-          Simple, clear steps so people can start in under a minute.
-        </p>
-      </div>
-      <ol class="av-section-body space-y-2 text-slate-300 list-decimal list-inside">
-        <li>Open FlashNote in your browser.</li>
-        <li>Add the topic, content, or material you want to work with.</li>
-        <li>Use the focused tools to learn, revise, or practice within minutes.</li>
-      </ol>
-    </AvContainer>
-  </section>
-
-  <!-- Final CTA -->
-  <section class="av-section">
-    <AvContainer size="narrow">
-      <div class="av-section-header">
-        <h2 class="av-section-title">Ready to try FlashNote?</h2>
-        <p class="av-section-lead">
-          Open the app, follow the simple flow, and let it handle the heavy lifting.
-        </p>
-      </div>
-      <div class="av-cta-row">
-        <AvButton href="https://flashnote.ansiversa.com">Start with FlashNote</AvButton>
+        <AvCard variant="soft" className="av-auth-stack-md">
+          <div class="av-auth-stack-sm">
+            <div>
+              <h2 class="av-card-heading">Quiz-powered flashcards</h2>
+              <p class="av-text-soft">
+                Pull curated questions from Quiz and turn them into review-ready cards in one step.
+              </p>
+            </div>
+            <div class="av-row-wrap">
+              <AvButton href="/decks" variant="ghost">Go to decks</AvButton>
+            </div>
+          </div>
+        </AvCard>
       </div>
     </AvContainer>
   </section>

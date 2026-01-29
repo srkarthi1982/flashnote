@@ -1,0 +1,87 @@
+---
+import { AvBreadcrumb, AvButton, AvCard, AvContainer } from "@ansiversa/components";
+import AppShell from "../../layouts/AppShell.astro";
+
+const { deckId } = Astro.params;
+const deckKey = deckId ?? "";
+const deckValue = JSON.stringify(deckKey);
+
+const title = "Study – FlashNote";
+const description = "Review your flashcards with focus.";
+---
+
+<AppShell title={title} description={description}>
+  <section class="av-faq-public__crumb">
+    <AvContainer>
+      <AvBreadcrumb
+        items={[
+          { label: "Home", href: "/" },
+          { label: "Decks", href: "/decks" },
+          { label: "Study" },
+        ]}
+      />
+    </AvContainer>
+  </section>
+
+  <section class="av-section" x-data x-init={`$store.flashnote.prepareStudy(${deckValue})`}>
+    <AvContainer>
+      <div class="av-auth-stack-lg">
+        <AvCard className="av-auth-stack-md">
+          <div class="av-row-between">
+            <div>
+              <p class="av-kicker">Study</p>
+              <h1 class="av-section-title" x-text="$store.flashnote.currentDeck?.title || 'Deck'">
+              </h1>
+              <p class="av-text-soft" x-text="`${$store.flashnote.study.reviewed} reviewed`"></p>
+            </div>
+            <div class="av-row-wrap">
+              <AvButton :href="`/decks/${deckKey}`" variant="ghost">Back to deck</AvButton>
+            </div>
+          </div>
+        </AvCard>
+
+        <AvCard className="av-auth-stack-md" x-show="!$store.flashnote.study.completed">
+          <div class="av-auth-stack-sm" x-show="$store.flashnote.activeCard">
+            <h2 class="av-card-heading">Front</h2>
+            <p class="av-text-strong" x-text="$store.flashnote.activeCard?.front"></p>
+
+            <template x-if="$store.flashnote.study.showBack">
+              <div class="av-auth-stack-sm">
+                <h3 class="av-card-heading">Back</h3>
+                <p class="av-text-soft" x-text="$store.flashnote.activeCard?.back"></p>
+              </div>
+            </template>
+
+            <div class="av-row-wrap" x-show="!$store.flashnote.study.showBack">
+              <AvButton @click="$store.flashnote.revealBack()">Reveal answer</AvButton>
+            </div>
+
+            <div class="av-row-wrap" x-show="$store.flashnote.study.showBack">
+              <AvButton size="sm" variant="ghost" @click="$store.flashnote.reviewCard(0)">0</AvButton>
+              <AvButton size="sm" variant="ghost" @click="$store.flashnote.reviewCard(1)">1</AvButton>
+              <AvButton size="sm" variant="ghost" @click="$store.flashnote.reviewCard(2)">2</AvButton>
+              <AvButton size="sm" @click="$store.flashnote.reviewCard(3)">3</AvButton>
+              <AvButton size="sm" @click="$store.flashnote.reviewCard(4)">4</AvButton>
+              <AvButton size="sm" @click="$store.flashnote.reviewCard(5)">5</AvButton>
+            </div>
+          </div>
+
+          <div class="av-auth-stack-sm" x-show="!$store.flashnote.activeCard">
+            <p class="av-text-soft">No cards available for study.</p>
+            <AvButton :href="`/decks/${deckKey}`" variant="ghost">Add cards</AvButton>
+          </div>
+        </AvCard>
+
+        <AvCard variant="soft" className="av-auth-stack-md" x-show="$store.flashnote.study.completed">
+          <div class="av-auth-stack-sm">
+            <h2 class="av-card-heading">Session complete</h2>
+            <p class="av-text-soft" x-text="`Reviewed ${$store.flashnote.study.reviewed} cards.`"></p>
+            <div class="av-row-wrap">
+              <AvButton :href="`/decks/${deckKey}`">Back to deck</AvButton>
+            </div>
+          </div>
+        </AvCard>
+      </div>
+    </AvContainer>
+  </section>
+</AppShell>

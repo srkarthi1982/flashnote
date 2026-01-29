@@ -1,0 +1,140 @@
+---
+import {
+  AvBreadcrumb,
+  AvButton,
+  AvCard,
+  AvContainer,
+  AvEmptyState,
+  AvInput,
+  AvTextarea,
+} from "@ansiversa/components";
+import AppShell from "../../layouts/AppShell.astro";
+
+const { id } = Astro.params;
+const deckId = id ?? "";
+const deckKey = JSON.stringify(deckId);
+
+const title = "Deck details – FlashNote";
+const description = "Review cards, add new ones, or import from Quiz.";
+---
+
+<AppShell title={title} description={description}>
+  <section class="av-faq-public__crumb">
+    <AvContainer>
+      <AvBreadcrumb
+        items={[
+          { label: "Home", href: "/" },
+          { label: "Decks", href: "/decks" },
+          { label: "Deck details" },
+        ]}
+      />
+    </AvContainer>
+  </section>
+
+  <section class="av-section" x-data x-init={`$store.flashnote.openDeck(${deckKey})`}>
+    <AvContainer>
+      <div class="av-auth-stack-lg">
+        <AvCard className="av-auth-stack-md">
+          <div class="av-row-between">
+            <div>
+              <p class="av-kicker">Deck</p>
+              <h1 class="av-section-title" x-text="$store.flashnote.currentDeck?.title || 'Deck'"></h1>
+              <p class="av-text-soft" x-text="$store.flashnote.currentDeck?.description || 'No description yet.'"></p>
+            </div>
+            <div class="av-row-wrap">
+              <AvButton :href="`/study/${deckId}`">Start study</AvButton>
+            </div>
+          </div>
+        </AvCard>
+
+        <AvCard className="av-auth-stack-md">
+          <div class="av-auth-stack-sm">
+            <h2 class="av-card-heading">Add a card</h2>
+            <form class="av-auth-stack-sm" @submit.prevent="$store.flashnote.createCard()">
+              <AvInput
+                label="Front"
+                name="card-front"
+                placeholder="Question or prompt"
+                x-model="$store.flashnote.newCard.front"
+                required
+              />
+              <AvTextarea
+                label="Back"
+                name="card-back"
+                rows={3}
+                placeholder="Answer or explanation"
+                x-model="$store.flashnote.newCard.back"
+                required
+              />
+              <div class="av-row-wrap">
+                <AvButton type="submit" :disabled="$store.flashnote.loading">Add card</AvButton>
+              </div>
+              <p class="av-text-soft" x-show="$store.flashnote.error" x-text="$store.flashnote.error"></p>
+              <p class="av-text-soft" x-show="$store.flashnote.success" x-text="$store.flashnote.success"></p>
+            </form>
+          </div>
+        </AvCard>
+
+        <AvCard variant="soft" className="av-auth-stack-md">
+          <div class="av-auth-stack-sm">
+            <h2 class="av-card-heading">Import from Quiz</h2>
+            <p class="av-text-soft">Bring in questions by quiz or topic ID and turn them into flashcards.</p>
+            <form class="av-auth-stack-sm" @submit.prevent="$store.flashnote.importFromQuiz()">
+              <div class="av-grid-2">
+                <AvInput
+                  label="Quiz ID"
+                  name="quiz-id"
+                  placeholder="Optional"
+                  x-model="$store.flashnote.quizImport.quizId"
+                />
+                <AvInput
+                  label="Topic ID"
+                  name="topic-id"
+                  placeholder="Optional"
+                  x-model="$store.flashnote.quizImport.topicId"
+                />
+              </div>
+              <AvInput
+                label="Limit"
+                name="quiz-limit"
+                type="number"
+                min="1"
+                max="200"
+                x-model="$store.flashnote.quizImport.limit"
+              />
+              <div class="av-row-wrap">
+                <AvButton type="submit" variant="ghost" :disabled="$store.flashnote.loading">Import</AvButton>
+              </div>
+            </form>
+          </div>
+        </AvCard>
+
+        <AvCard variant="soft" className="av-auth-stack-md">
+          <div class="av-row-between">
+            <h2 class="av-card-heading">Cards</h2>
+            <p class="av-text-soft" x-text="`${$store.flashnote.cards.length} total`"></p>
+          </div>
+
+          <template x-if="$store.flashnote.cards.length === 0 && !$store.flashnote.loading">
+            <AvEmptyState
+              title="No cards yet"
+              description="Add a card or import from Quiz to start studying."
+            />
+          </template>
+
+          <div class="av-auth-stack-sm" x-show="$store.flashnote.cards.length > 0">
+            <template x-for="card in $store.flashnote.cards" :key="card.id">
+              <div class="av-card av-card-soft av-auth-stack-xs">
+                <div>
+                  <p class="av-text-strong" x-text="card.front"></p>
+                  <p class="av-text-soft" x-text="card.back"></p>
+                </div>
+                <p class="av-text-soft" x-text="card.sourceType === 'quiz' ? 'Imported from Quiz' : 'Manual card'"></p>
+              </div>
+            </template>
+          </div>
+        </AvCard>
+      </div>
+    </AvContainer>
+  </section>
+</AppShell>

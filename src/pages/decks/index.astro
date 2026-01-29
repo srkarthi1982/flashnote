@@ -1,0 +1,94 @@
+---
+import {
+  AvBreadcrumb,
+  AvButton,
+  AvCard,
+  AvContainer,
+  AvEmptyState,
+  AvInput,
+  AvTextarea,
+} from "@ansiversa/components";
+import AppShell from "../../layouts/AppShell.astro";
+
+const title = "FlashNote Decks – Ansiversa";
+const description = "Create and manage your flashcard decks.";
+---
+
+<AppShell title={title} description={description}>
+  <section class="av-faq-public__crumb">
+    <AvContainer>
+      <AvBreadcrumb items={[{ label: "Home", href: "/" }, { label: "Decks" }]} />
+    </AvContainer>
+  </section>
+
+  <section class="av-section" x-data x-init="$store.flashnote.loadDecks()">
+    <AvContainer>
+      <div class="av-auth-stack-lg">
+        <AvCard className="av-auth-stack-md">
+          <div class="av-auth-stack-sm">
+            <div>
+              <p class="av-kicker">FlashNote</p>
+              <h1 class="av-section-title">Your decks</h1>
+              <p class="av-text-soft">Create a deck or import from Quiz when you are ready.</p>
+            </div>
+
+            <form class="av-auth-stack-sm" @submit.prevent="$store.flashnote.createDeck()">
+              <div class="av-auth-stack-xs">
+                <AvInput
+                  label="Deck title"
+                  name="deck-title"
+                  placeholder="e.g., Biology Chapter 3"
+                  x-model="$store.flashnote.newDeck.title"
+                  required
+                />
+                <AvTextarea
+                  label="Description"
+                  name="deck-description"
+                  rows={2}
+                  placeholder="Short notes about this deck"
+                  x-model="$store.flashnote.newDeck.description"
+                />
+              </div>
+              <div class="av-row-wrap">
+                <AvButton type="submit" :disabled="$store.flashnote.loading">Create deck</AvButton>
+              </div>
+              <p class="av-text-soft" x-show="$store.flashnote.error" x-text="$store.flashnote.error"></p>
+              <p class="av-text-soft" x-show="$store.flashnote.success" x-text="$store.flashnote.success"></p>
+            </form>
+          </div>
+        </AvCard>
+
+        <AvCard variant="soft" className="av-auth-stack-md">
+          <div class="av-row-between">
+            <h2 class="av-card-heading">Decks</h2>
+            <p class="av-text-soft" x-text="`${$store.flashnote.decks.length} total`"></p>
+          </div>
+
+          <template x-if="$store.flashnote.decks.length === 0 && !$store.flashnote.loading">
+            <AvEmptyState
+              title="No decks yet"
+              description="Create your first deck to start studying."
+            />
+          </template>
+
+          <div class="av-auth-stack-sm" x-show="$store.flashnote.decks.length > 0">
+            <template x-for="deck in $store.flashnote.decks" :key="deck.id">
+              <div class="av-card av-card-soft av-auth-stack-xs">
+                <div class="av-row-between">
+                  <div>
+                    <h3 class="av-card-heading" x-text="deck.title"></h3>
+                    <p class="av-text-soft" x-text="deck.description || 'No description'"></p>
+                  </div>
+                  <div class="av-row-wrap">
+                    <p class="av-text-soft" x-text="`${deck.cardsCount ?? 0} cards`"></p>
+                    <AvButton size="sm" :href="`/decks/${deck.id}`">Open</AvButton>
+                  </div>
+                </div>
+              </div>
+            </template>
+          </div>
+        </AvCard>
+      </div>
+    </AvContainer>
+  </section>
+</AppShell>
