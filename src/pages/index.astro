@@ -1,46 +1,565 @@
 ---
-import { AvButton, AvCard, AvContainer } from "@ansiversa/components";
 import AppShell from "../layouts/AppShell.astro";
+import { AvContainer, AvButton, AvTimeline } from "@ansiversa/components";
+import { FlashcardDecks, Flashcards, StudySessions, count, db } from "astro:db";
 
 const title = "FlashNote – Ansiversa";
 const description = "Capture, review, and remember with calm flashcard study flows.";
+
+const flashnoteTimelineItems = [
+  {
+    date: "Pillar 01",
+    title: "Deck-first organization",
+    body: "Keep every topic cleanly separated with focused decks and tags.",
+  },
+  {
+    date: "Pillar 02",
+    title: "Quiz import pipeline",
+    body: "Turn Quiz questions into instant recall prompts in one step.",
+  },
+  {
+    date: "Pillar 03",
+    title: "Focused study flow",
+    body: "One card at a time, with calm pacing and zero distractions.",
+  },
+  {
+    date: "Pillar 04",
+    title: "Review history",
+    body: "Track attempts and keep a clear picture of progress over time.",
+  },
+  {
+    date: "Pillar 05",
+    title: "Clean card editing",
+    body: "Update cards quickly without breaking your study rhythm.",
+  },
+  {
+    date: "Pillar 06",
+    title: "Built for retention",
+    body: "Capture notes, convert to cards, and review until it sticks.",
+  },
+];
+
+const [{ value: deckCountRaw } = { value: 0 }] = await db
+  .select({ value: count() })
+  .from(FlashcardDecks);
+const [{ value: cardCountRaw } = { value: 0 }] = await db
+  .select({ value: count() })
+  .from(Flashcards);
+const [{ value: sessionCountRaw } = { value: 0 }] = await db
+  .select({ value: count() })
+  .from(StudySessions);
+
+const deckCount = Number(deckCountRaw ?? 0);
+const cardCount = Number(cardCountRaw ?? 0);
+const sessionCount = Number(sessionCountRaw ?? 0);
+
+const formatCompact = (value: number) => {
+  if (value >= 1_000_000) {
+    return `${(value / 1_000_000).toFixed(2).replace(/\.?0+$/, "")}M`;
+  }
+  if (value >= 1_000) {
+    return `${(value / 1_000).toFixed(1).replace(/\.0$/, "")}K`;
+  }
+  return value.toLocaleString();
+};
 ---
 
 <AppShell title={title} description={description}>
+  <section class="fn-hero">
+    <AvContainer size="default">
+      <div class="fn-hero__grid">
+        <div class="fn-hero__text">
+          <div class="av-kicker">
+            <span>Learning · Ansiversa Mini App</span>
+          </div>
+          <h1 class="fn-hero__title">FlashNote</h1>
+          <p class="fn-hero__lead">
+            Turn notes into recall-ready flashcards. Build decks fast, study with focus, and keep a clean
+            review history.
+          </p>
+          <div class="fn-hero__bullets">
+            <span>Deck-based structure that keeps topics organized</span>
+            <span>Import from Quiz for instant recall prompts</span>
+            <span>Study sessions tracked for long-term retention</span>
+          </div>
+          <div class="fn-hero__cta">
+            <AvButton href="/decks">Create Deck</AvButton>
+            <AvButton href="/decks" variant="ghost">Import from Quiz</AvButton>
+          </div>
+          <p class="fn-hero__note">Focused decks. Clean recall. Calm study flow.</p>
+        </div>
+
+        <div class="fn-hero__panel">
+          <div class="fn-hero__panel-card">
+            <p class="fn-hero__panel-kicker">Your flow</p>
+            <h3 class="fn-hero__panel-title">Three steps to a study session</h3>
+            <ol class="fn-hero__panel-steps">
+              <li><span>1</span>Create or import a deck</li>
+              <li><span>2</span>Add cards or edit prompts</li>
+              <li><span>3</span>Study and review results</li>
+            </ol>
+            <div class="fn-hero__panel-footer">
+              <div>
+                <p class="fn-hero__panel-label">Session length</p>
+                <p class="fn-hero__panel-value">~5 min</p>
+              </div>
+              <div>
+                <p class="fn-hero__panel-label">Card format</p>
+                <p class="fn-hero__panel-value">Front + Back</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="fn-hero__stats">
+        <div class="fn-stat">
+          <p class="fn-stat__value">{formatCompact(deckCount)}</p>
+          <p class="fn-stat__label">Decks created</p>
+        </div>
+        <div class="fn-stat">
+          <p class="fn-stat__value">{formatCompact(cardCount)}</p>
+          <p class="fn-stat__label">Cards prepared</p>
+        </div>
+        <div class="fn-stat">
+          <p class="fn-stat__value">{formatCompact(sessionCount)}</p>
+          <p class="fn-stat__label">Study sessions</p>
+        </div>
+      </div>
+    </AvContainer>
+  </section>
+
   <section class="av-section">
-    <AvContainer>
-      <div class="av-auth-stack-lg">
-        <AvCard className="av-auth-card">
-          <div class="av-auth-stack-md">
-            <div class="av-auth-stack-xs">
-              <p class="av-kicker">FlashNote</p>
-              <h1 class="av-section-title">Make every study session feel focused</h1>
-              <p class="av-text-soft">
-                Build decks quickly, import from Quiz, and keep review streaks simple with a clean study flow.
-              </p>
-            </div>
+    <AvContainer size="default">
+      <div class="fn-section__header">
+        <h2 class="av-section-title">What makes FlashNote different</h2>
+        <p class="av-section-lead">
+          FlashNote is designed for calm, consistent recall. Everything stays structured and easy to revisit.
+        </p>
+      </div>
+      <AvTimeline items={flashnoteTimelineItems} />
+    </AvContainer>
+  </section>
 
-            <div class="av-row-wrap">
-              <AvButton href="/decks">Create deck</AvButton>
-              <AvButton href="/decks" variant="ghost">Import from Quiz</AvButton>
-            </div>
-          </div>
-        </AvCard>
+  <section class="av-section fn-process">
+    <AvContainer size="default">
+      <div class="av-section-header">
+        <div class="av-kicker">
+          <span>How it feels</span>
+        </div>
+        <h2 class="av-section-title">How it feels to use</h2>
+        <p class="av-section-lead">
+          A guided flow that keeps learners focused, while giving mentors clear progress signals.
+        </p>
+      </div>
 
-        <AvCard variant="soft" className="av-auth-stack-md">
-          <div class="av-auth-stack-sm">
-            <div>
-              <h2 class="av-card-heading">Quiz-powered flashcards</h2>
-              <p class="av-text-soft">
-                Pull curated questions from Quiz and turn them into review-ready cards in one step.
-              </p>
-            </div>
-            <div class="av-row-wrap">
-              <AvButton href="/decks" variant="ghost">Go to decks</AvButton>
-            </div>
+      <ol class="av-steps">
+        <li class="av-step">
+          <span class="av-step-number">1</span>
+          <div class="av-step-body">
+            <h3 class="av-card-heading">Capture notes with clarity</h3>
+            <p>Collect the core ideas you want to retain, then convert them into cards.</p>
           </div>
-        </AvCard>
+        </li>
+
+        <li class="av-step">
+          <span class="av-step-number">2</span>
+          <div class="av-step-body">
+            <h3 class="av-card-heading">Study without distractions</h3>
+            <p>Focus on one prompt at a time with a smooth, predictable rhythm.</p>
+          </div>
+        </li>
+
+        <li class="av-step">
+          <span class="av-step-number">3</span>
+          <div class="av-step-body">
+            <h3 class="av-card-heading">Track recall over time</h3>
+            <p>Sessions are saved so you always know what needs reinforcement.</p>
+          </div>
+        </li>
+      </ol>
+    </AvContainer>
+  </section>
+
+  <section class="av-section">
+    <AvContainer size="default">
+      <div class="fn-section__header">
+        <h2 class="av-section-title">Who uses FlashNote</h2>
+        <p class="av-section-lead">
+          From classrooms to corporate training, FlashNote fits any learning environment.
+        </p>
+      </div>
+      <div class="fn-audience-grid">
+        <div class="fn-audience">
+          <h3>Schools &amp; students</h3>
+          <p>Convert lecture notes into quick recall drills.</p>
+        </div>
+        <div class="fn-audience">
+          <h3>Coaching institutes</h3>
+          <p>Build topic-wise decks for fast revision and test prep.</p>
+        </div>
+        <div class="fn-audience">
+          <h3>Teams &amp; HR</h3>
+          <p>Train teams on policy, onboarding, and product knowledge.</p>
+        </div>
+        <div class="fn-audience">
+          <h3>Self learners</h3>
+          <p>Practice personal study plans with consistency and momentum.</p>
+        </div>
+      </div>
+    </AvContainer>
+  </section>
+
+  <section class="av-section">
+    <AvContainer size="default">
+      <div class="fn-section__header">
+        <h2 class="av-section-title">Works with your learning stack</h2>
+        <p class="av-section-lead">
+          FlashNote is designed to complement other Ansiversa mini apps.
+        </p>
+      </div>
+      <div class="fn-apps-grid">
+        <a
+          href="https://quiz.ansiversa.com"
+          class="fn-app-card"
+        >
+          <p class="fn-app-card__label">Quiz</p>
+          <h3>Turn assessments into instant flashcards.</h3>
+          <p>Import Quiz questions and review them until they stick.</p>
+        </a>
+        <a
+          href="https://exam.ansiversa.com"
+          class="fn-app-card"
+        >
+          <p class="fn-app-card__label">Exam Simulator</p>
+          <h3>Scale up to timed mock exams.</h3>
+          <p>Use flashcards to drill concepts before test day.</p>
+        </a>
+        <a
+          href="https://study-timer.ansiversa.com"
+          class="fn-app-card"
+        >
+          <p class="fn-app-card__label">Study Timer</p>
+          <h3>Keep study blocks disciplined.</h3>
+          <p>Pair focused sessions with timer-led study cycles.</p>
+        </a>
+      </div>
+    </AvContainer>
+  </section>
+
+  <section class="av-section">
+    <AvContainer size="default">
+      <div class="fn-section__header">
+        <h2 class="av-section-title">Deck sources</h2>
+        <p class="av-section-lead">
+          Build decks manually or import from Quiz. Keep everything organized in one workspace.
+        </p>
+      </div>
+      <div class="fn-sources-grid">
+        <div class="fn-sources-card">
+          <p class="fn-sources-card__label">Manual decks</p>
+          <p>Create decks from your notes, books, or lectures.</p>
+        </div>
+        <div class="fn-sources-card">
+          <p class="fn-sources-card__label">Quiz imports</p>
+          <p>Convert Quiz content into recall-ready flashcards.</p>
+        </div>
+      </div>
+    </AvContainer>
+  </section>
+
+  <section class="av-section">
+    <AvContainer size="default">
+      <div class="fn-section__header">
+        <h2 class="av-section-title">Built like a system</h2>
+        <p class="av-section-lead">
+          FlashNote follows the same architecture and governance standards as every Ansiversa mini app.
+        </p>
+      </div>
+      <div class="fn-proof">
+        <div class="fn-proof__item">Deck-first taxonomy with clean owner separation.</div>
+        <div class="fn-proof__item">Study sessions saved per user with review history.</div>
+        <div class="fn-proof__item">Quiz import pipeline for instant deck creation.</div>
+      </div>
+    </AvContainer>
+  </section>
+
+  <section class="av-section fn-final">
+    <AvContainer size="default">
+      <div class="fn-final__content">
+        <div>
+          <h2 class="av-section-title">Ready to build your first deck?</h2>
+          <p class="av-section-lead">
+            Launch FlashNote and start reviewing in minutes.
+          </p>
+        </div>
+        <div class="fn-final__cta">
+          <AvButton href="/decks">Start with FlashNote</AvButton>
+        </div>
       </div>
     </AvContainer>
   </section>
 </AppShell>
+
+<style>
+  .fn-hero {
+    position: relative;
+    padding: 4rem 0 2.5rem;
+    background: radial-gradient(circle at top left, rgba(34, 211, 238, 0.18), transparent 55%),
+      radial-gradient(circle at 80% 0%, rgba(14, 116, 144, 0.2), transparent 50%);
+  }
+  .fn-hero__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+    align-items: center;
+  }
+  .fn-hero__title {
+    font-size: clamp(2.5rem, 5vw, 3.5rem);
+    font-weight: 700;
+    color: #f8fafc;
+    margin: 0.35rem 0 0.75rem;
+  }
+  .fn-hero__lead {
+    color: rgba(226, 232, 240, 0.85);
+    font-size: 1rem;
+    line-height: 1.7;
+  }
+  .fn-hero__bullets {
+    display: grid;
+    gap: 0.5rem;
+    margin-top: 1.25rem;
+    color: rgba(148, 163, 184, 0.9);
+    font-size: 0.9rem;
+  }
+  .fn-hero__bullets span {
+    padding-left: 1.1rem;
+    position: relative;
+  }
+  .fn-hero__bullets span::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.6rem;
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background: rgba(34, 211, 238, 0.7);
+  }
+  .fn-hero__cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.75rem;
+  }
+  .fn-hero__note {
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+    color: rgba(148, 163, 184, 0.85);
+  }
+  .fn-hero__panel-card {
+    border-radius: 1.5rem;
+    border: 1px solid rgba(30, 41, 59, 0.7);
+    background: rgba(15, 23, 42, 0.75);
+    padding: 1.75rem;
+    box-shadow: 0 20px 60px rgba(2, 8, 23, 0.35);
+  }
+  .fn-hero__panel-kicker {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: rgba(148, 163, 184, 0.8);
+    margin-bottom: 0.4rem;
+  }
+  .fn-hero__panel-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #f8fafc;
+    margin-bottom: 1rem;
+  }
+  .fn-hero__panel-steps {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 0.65rem;
+    color: rgba(226, 232, 240, 0.85);
+    font-size: 0.9rem;
+  }
+  .fn-hero__panel-steps li {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .fn-hero__panel-steps span {
+    width: 1.6rem;
+    height: 1.6rem;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.75rem;
+    background: rgba(34, 211, 238, 0.18);
+    color: #a5f3fc;
+  }
+  .fn-hero__panel-footer {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(30, 41, 59, 0.6);
+  }
+  .fn-hero__panel-label {
+    font-size: 0.75rem;
+    color: rgba(148, 163, 184, 0.75);
+    margin-bottom: 0.25rem;
+  }
+  .fn-hero__panel-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #e2e8f0;
+  }
+  .fn-hero__stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-top: 2.5rem;
+  }
+  .fn-stat {
+    padding: 1rem 1.25rem;
+    border-radius: 1rem;
+    border: 1px solid rgba(30, 41, 59, 0.6);
+    background: rgba(15, 23, 42, 0.55);
+  }
+  .fn-stat__value {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #f8fafc;
+  }
+  .fn-stat__label {
+    font-size: 0.85rem;
+    color: rgba(148, 163, 184, 0.85);
+  }
+  .fn-section__header {
+    max-width: 46rem;
+    margin-bottom: 2rem;
+  }
+  .fn-process {
+    position: relative;
+  }
+  .fn-audience-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+  }
+  .fn-audience {
+    padding: 1.25rem;
+    border-radius: 1.25rem;
+    border: 1px solid rgba(30, 41, 59, 0.6);
+    background: rgba(15, 23, 42, 0.6);
+  }
+  .fn-audience h3 {
+    color: #f8fafc;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  .fn-audience p {
+    color: rgba(148, 163, 184, 0.9);
+    font-size: 0.9rem;
+  }
+  .fn-apps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+  }
+  .fn-app-card {
+    display: block;
+    padding: 1.25rem;
+    border-radius: 1.25rem;
+    border: 1px solid rgba(30, 41, 59, 0.65);
+    background: rgba(15, 23, 42, 0.6);
+    color: rgba(226, 232, 240, 0.85);
+    transition: border 0.2s ease, transform 0.2s ease;
+  }
+  .fn-app-card:hover {
+    border-color: rgba(34, 211, 238, 0.6);
+    transform: translateY(-2px);
+  }
+  .fn-app-card__label {
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(34, 211, 238, 0.9);
+  }
+  .fn-app-card h3 {
+    margin-top: 0.6rem;
+    color: #f8fafc;
+    font-size: 1rem;
+  }
+  .fn-app-card p {
+    margin-top: 0.5rem;
+    color: rgba(148, 163, 184, 0.9);
+    font-size: 0.9rem;
+  }
+  .fn-sources-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+  }
+  .fn-sources-card {
+    padding: 1.5rem;
+    border-radius: 1.5rem;
+    border: 1px solid rgba(30, 41, 59, 0.65);
+    background: rgba(15, 23, 42, 0.6);
+    color: rgba(226, 232, 240, 0.85);
+  }
+  .fn-sources-card__label {
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(34, 211, 238, 0.9);
+    margin-bottom: 1rem;
+  }
+  .fn-proof {
+    display: grid;
+    gap: 0.75rem;
+  }
+  .fn-proof__item {
+    padding: 0.85rem 1rem;
+    border-radius: 0.9rem;
+    border: 1px solid rgba(30, 41, 59, 0.6);
+    background: rgba(15, 23, 42, 0.6);
+    color: rgba(226, 232, 240, 0.9);
+    font-size: 0.9rem;
+  }
+  .fn-final {
+    border-top: 0;
+  }
+  .fn-final__content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2rem 2.5rem;
+    border-radius: 1.5rem;
+    border: 1px solid rgba(30, 41, 59, 0.7);
+    background: rgba(15, 23, 42, 0.7);
+  }
+  .fn-final__cta {
+    flex: 0 0 auto;
+  }
+  @media (max-width: 768px) {
+    .fn-hero {
+      padding-top: 3rem;
+    }
+    .fn-hero__panel-card {
+      padding: 1.5rem;
+    }
+    .fn-final__content {
+      padding: 1.5rem;
+    }
+  }
+</style>
