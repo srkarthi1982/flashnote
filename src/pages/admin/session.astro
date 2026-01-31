@@ -1,0 +1,24 @@
+---
+import AppAdminShell from "../../layouts/AppAdminShell.astro";
+import { AvCard } from "@ansiversa/components";
+
+const session = Astro.locals.session;
+---
+
+<AppAdminShell
+  title="Session Debug – Ansiversa"
+  description="Temporary session visibility for payment flags."
+  crumbItems={[
+    { label: "Home", href: "/" },
+    { label: "Administration", href: "/admin" },
+    { label: "Session Debug" },
+  ]}
+>
+  <AvCard variant="soft" className="av-auth-stack-sm">
+    <div class="av-auth-stack-xxs">
+      <h1 class="av-card-heading av-m-0">Session Debug</h1>
+      <p class="av-text-soft av-m-0">Visible to admins for Phase 2 verification.</p>
+    </div>
+    <pre class="av-text-soft av-m-0">{JSON.stringify(session, null, 2)}</pre>
+  </AvCard>
+</AppAdminShell>

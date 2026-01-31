@@ -52,7 +52,19 @@ declare namespace App {
       email: string;
       name?: string;
       roleId?: number;
-      stripeCustomerId?: string;
+      stripeCustomerId: string | null;
+      plan: string | null;
+      planStatus: string | null;
+      isPaid: boolean;
+      renewalAt: number | null;
+    };
+    session?: {
+      userId: string;
+      roleId: string | null;
+      plan: string | null;
+      planStatus: string | null;
+      isPaid: boolean;
+      renewalAt: number | null;
     };
     sessionToken?: string | null;
     isAuthenticated?: boolean;

@@ -19,7 +19,11 @@ const locals = Astro.locals as {
     email: string;
     name?: string;
     roleId?: number;
-    stripeCustomerId?: string;
+    stripeCustomerId: string | null;
+    plan: string | null;
+    planStatus: string | null;
+    isPaid: boolean;
+    renewalAt: number | null;
   };
 };
 
@@ -35,7 +39,11 @@ const user = locals?.user ??
         email: sessionPayload.email,
         name: sessionPayload.name,
         roleId: sessionPayload.roleId ? Number(sessionPayload.roleId) : undefined,
-        stripeCustomerId: sessionPayload.stripeCustomerId ?? undefined,
+        stripeCustomerId: sessionPayload.stripeCustomerId ?? null,
+        plan: sessionPayload.plan ?? null,
+        planStatus: sessionPayload.planStatus ?? null,
+        isPaid: sessionPayload.isPaid === true,
+        renewalAt: sessionPayload.renewalAt ?? null,
       }
     : undefined);
 

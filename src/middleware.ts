@@ -44,6 +44,14 @@ export const onRequest = defineMiddleware(async (context, next) => {
   locals.sessionToken = null;
   locals.isAuthenticated = false;
   locals.rootAppUrl = ROOT_APP_URL;
+  locals.session = {
+    userId: "",
+    roleId: null,
+    plan: null,
+    planStatus: null,
+    isPaid: false,
+    renewalAt: null,
+  };
 
   // 1) Read the shared session cookie
   const token = cookies.get(SESSION_COOKIE_NAME)?.value;
@@ -59,7 +67,19 @@ export const onRequest = defineMiddleware(async (context, next) => {
         email: payload.email,
         name: payload.name,
         roleId: Number.isFinite(roleId) ? roleId : undefined,
-        stripeCustomerId: payload.stripeCustomerId ?? undefined,
+        stripeCustomerId: payload.stripeCustomerId ?? null,
+        plan: payload.plan ?? null,
+        planStatus: payload.planStatus ?? null,
+        isPaid: payload.isPaid === true,
+        renewalAt: payload.renewalAt ?? null,
+      };
+      locals.session = {
+        userId: payload.userId,
+        roleId: payload.roleId ? String(payload.roleId) : null,
+        plan: payload.plan ?? null,
+        planStatus: payload.planStatus ?? null,
+        isPaid: payload.isPaid === true,
+        renewalAt: typeof payload.renewalAt === "number" ? payload.renewalAt : null,
       };
 
       locals.sessionToken = token;
@@ -85,6 +105,19 @@ export const onRequest = defineMiddleware(async (context, next) => {
       id: devUserId,
       email: devEmail,
       roleId: devRoleId,
+      stripeCustomerId: null,
+      plan: null,
+      planStatus: null,
+      isPaid: false,
+      renewalAt: null,
+    };
+    locals.session = {
+      userId: devUserId,
+      roleId: String(devRoleId),
+      plan: null,
+      planStatus: null,
+      isPaid: false,
+      renewalAt: null,
     };
     locals.sessionToken = null;
     locals.isAuthenticated = true;

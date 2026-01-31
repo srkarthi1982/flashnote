@@ -29,6 +29,8 @@ This file records what was built/changed so far for the flashnote repo. Read fir
 
 ## 3. Task Log (Newest first)
 
+- 2026-01-31 Normalized payment fields in `Astro.locals.user` to avoid undefined values (stripeCustomerId/plan/planStatus/isPaid/renewalAt).
+- 2026-01-31 Added locals.session payment flags in middleware/types and a temporary `/admin/session` debug page for Phase 2 verification.
 - 2026-01-30 Rebuilt landing page to match Quiz structure with FlashNote-specific content, stats, and sections.
 - 2026-01-29 Manual smoke test confirmed: Quiz completion triggers notifications ("Quiz completed", "Results saved") visible in parent `/notifications` UI.
 - 2026-01-29 Updated .env.example with required prod vars and dev helper notes.
@@ -45,6 +47,8 @@ This file records what was built/changed so far for the flashnote repo. Read fir
 
 ## 4. Verification Log
 
+- 2026-01-31 Pending manual check: paid user sees non-null fields; free user sees null/false in `Astro.locals.user`.
+- 2026-01-31 Pending manual check: `/admin/session` shows isPaid true for paid user and false for free user.
 - 2026-01-29 `npm run typecheck` (pass; 1 TypeScript hint in `src/actions/baseRepository.ts`).
 - 2026-01-29 `npm run build` (pass).
 - 2026-01-29 `npm run db:push` (pass after schema alignment).
