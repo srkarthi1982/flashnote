@@ -29,6 +29,7 @@ This file records what was built/changed so far for the flashnote repo. Read fir
 
 ## 3. Task Log (Newest first)
 
+- 2026-02-01 Added `/help` page and wired Help link into the mini-app menu.
 - 2026-02-01 Added AI suggestions + recent history + scoped generation (platform/subject/topic/roadmap), plus search action and UI updates.
 - 2026-02-01 Replaced deck quiz import UI with pro-only AI generation flow (search + advanced modal), added AI generation action with PAYMENT_REQUIRED enforcement, seeded shuffle, and AI card source type.
 - 2026-01-31 Normalized payment fields in `Astro.locals.user` to avoid undefined values (stripeCustomerId/plan/planStatus/isPaid/renewalAt).
@@ -49,6 +50,8 @@ This file records what was built/changed so far for the flashnote repo. Read fir
 
 ## 4. Verification Log
 
+- 2026-02-01 `npm run typecheck` (pass; 1 TypeScript hint in `src/actions/baseRepository.ts`).
+- 2026-02-01 `npm run build` (pass).
 - 2026-02-01 `npm run typecheck` (pass; 1 TypeScript hint in `src/actions/baseRepository.ts`).
 - 2026-02-01 `npm run build` (pass).
 - 2026-02-01 `npm run db:push` (pass after backend tables reset).

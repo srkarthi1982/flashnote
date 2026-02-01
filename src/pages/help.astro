@@ -1,0 +1,78 @@
+---
+import { AvBreadcrumb, AvButton, AvCard, AvContainer } from "@ansiversa/components";
+import AppShell from "../layouts/AppShell.astro";
+
+const title = "Help – FlashNote";
+const description = "Learn how to create decks, generate cards, and study with focus.";
+---
+
+<AppShell title={title} description={description}>
+  <section class="av-faq-public__crumb">
+    <AvContainer>
+      <AvBreadcrumb items={[{ label: "Home", href: "/" }, { label: "Help" }]} />
+    </AvContainer>
+  </section>
+
+  <section class="av-section">
+    <AvContainer>
+      <div class="av-auth-stack-lg">
+        <AvCard className="av-auth-stack-md">
+          <div>
+            <p class="av-kicker">FlashNote</p>
+            <h1 class="av-section-title">Help</h1>
+            <p class="av-text-soft">
+              FlashNote helps you build focused decks, generate AI-curated cards, and review with a
+              calm study flow.
+            </p>
+          </div>
+          <div class="av-row-wrap">
+            <AvButton href="/decks">Go to decks</AvButton>
+          </div>
+        </AvCard>
+
+        <AvCard variant="soft" className="av-auth-stack-md">
+          <div class="av-auth-stack-sm">
+            <h2 class="av-card-heading">How to start</h2>
+            <div class="av-auth-stack-xs">
+              <p class="av-text-soft">• Create a new deck.</p>
+              <p class="av-text-soft">• Add cards manually or generate with AI (Pro).</p>
+              <p class="av-text-soft">• Start a study session and review daily.</p>
+            </div>
+          </div>
+        </AvCard>
+
+        <AvCard variant="soft" className="av-auth-stack-md">
+          <div class="av-auth-stack-sm">
+            <h2 class="av-card-heading">Key features</h2>
+            <div class="av-auth-stack-xs">
+              <p class="av-text-soft">• AI suggestions with scoped generation.</p>
+              <p class="av-text-soft">• Recent history for quick re-generation.</p>
+              <p class="av-text-soft">• Study sessions with focused pacing.</p>
+            </div>
+          </div>
+        </AvCard>
+
+        <AvCard variant="soft" className="av-auth-stack-md">
+          <div class="av-auth-stack-sm">
+            <h2 class="av-card-heading">Free vs Pro</h2>
+            <div class="av-auth-stack-xs">
+              <p class="av-text-soft">• Free: Create decks and add cards manually.</p>
+              <p class="av-text-soft">• Pro: Generate AI-curated flashcards.</p>
+            </div>
+          </div>
+        </AvCard>
+
+        <AvCard variant="soft" className="av-auth-stack-md">
+          <div class="av-auth-stack-sm">
+            <h2 class="av-card-heading">Troubleshooting</h2>
+            <div class="av-auth-stack-xs">
+              <p class="av-text-soft">• If generation is empty, try a broader topic.</p>
+              <p class="av-text-soft">• If you see “Deck not found”, create a new deck first.</p>
+              <p class="av-text-soft">• Pro features require an active subscription.</p>
+            </div>
+          </div>
+        </AvCard>
+      </div>
+    </AvContainer>
+  </section>
+</AppShell>
