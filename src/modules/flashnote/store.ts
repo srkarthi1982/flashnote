@@ -3,6 +3,31 @@ import { AvBaseStore } from "@ansiversa/components/alpine";
 import { actions } from "astro:actions";
 import type { Flashcard, FlashcardDeck } from "./types";
 
+type AiSuggestionType = "roadmap" | "topic" | "subject" | "platform" | "query";
+type AiSuggestion = {
+  type: AiSuggestionType;
+  id: string;
+  label: string;
+  contextLabel?: string | null;
+  ts?: number;
+};
+
+type AiSuggestionGroups = {
+  roadmaps: AiSuggestion[];
+  topics: AiSuggestion[];
+  subjects: AiSuggestion[];
+  platforms: AiSuggestion[];
+};
+
+const emptySuggestions = (): AiSuggestionGroups => ({
+  roadmaps: [],
+  topics: [],
+  subjects: [],
+  platforms: [],
+});
+
+const AI_RECENT_KEY = "flashnote.aiRecent";
+
 const defaultState = () => ({
   currentDeckId: null as number | null,
   currentDeck: null as FlashcardDeck | null,
@@ -11,6 +36,13 @@ const defaultState = () => ({
   loading: false,
   error: null as string | null,
   success: null as string | null,
+  isPaid: false,
+  aiError: null as string | null,
+  aiSuccess: null as string | null,
+  aiSearching: false,
+  aiSelection: null as AiSuggestion | null,
+  aiSuggestions: emptySuggestions(),
+  aiRecent: [] as AiSuggestion[],
   newDeck: {
     title: "",
     description: "",
@@ -19,11 +51,15 @@ const defaultState = () => ({
     front: "",
     back: "",
   },
-  quizImport: {
-    quizId: "",
-    topicId: "",
+  aiGenerate: {
+    query: "",
+    difficulty: "",
     limit: 50,
   },
+  aiPaywallVisible: false,
+  aiLastSeedByDeck: {} as Record<string, string>,
+  aiSearchToken: 0,
+  aiSearchTimer: null as number | null,
   study: {
     sessionId: null as number | null,
     index: 0,
@@ -43,9 +79,20 @@ export class FlashnoteStore extends AvBaseStore implements ReturnType<typeof def
   loading = false;
   error: string | null = null;
   success: string | null = null;
+  isPaid = false;
+  aiError: string | null = null;
+  aiSuccess: string | null = null;
+  aiSearching = false;
+  aiSelection: AiSuggestion | null = null;
+  aiSuggestions: AiSuggestionGroups = emptySuggestions();
+  aiRecent: AiSuggestion[] = [];
   newDeck = { title: "", description: "" };
   newCard = { front: "", back: "" };
-  quizImport = { quizId: "", topicId: "", limit: 50 };
+  aiGenerate = { query: "", difficulty: "", limit: 50 };
+  aiPaywallVisible = false;
+  aiLastSeedByDeck: Record<string, string> = {};
+  aiSearchToken = 0;
+  aiSearchTimer: number | null = null;
   study: {
     sessionId: number | null;
     index: number;
@@ -73,6 +120,235 @@ export class FlashnoteStore extends AvBaseStore implements ReturnType<typeof def
 
   get activeCard() {
     return this.cards[this.study.index] ?? null;
+  }
+
+  setBillingStatus(isPaid: boolean) {
+    this.isPaid = Boolean(isPaid);
+  }
+
+  initAiSearch() {
+    this.loadAiRecent();
+    if (this.aiGenerate.query) {
+      this.queueAiSearch(this.aiGenerate.query);
+    }
+  }
+
+  private loadAiRecent() {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(AI_RECENT_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as AiSuggestion[];
+      if (Array.isArray(parsed)) {
+        this.aiRecent = parsed.filter((item) => item && item.label).slice(0, 10);
+      }
+    } catch {
+      this.aiRecent = [];
+    }
+  }
+
+  private saveAiRecent() {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(AI_RECENT_KEY, JSON.stringify(this.aiRecent.slice(0, 10)));
+    } catch {
+      // ignore storage issues
+    }
+  }
+
+  private addAiRecent(entry: AiSuggestion) {
+    const existingIndex = this.aiRecent.findIndex(
+      (item) => item.type === entry.type && item.id === entry.id && item.label === entry.label,
+    );
+    if (existingIndex >= 0) {
+      this.aiRecent.splice(existingIndex, 1);
+    }
+    this.aiRecent = [entry, ...this.aiRecent].slice(0, 10);
+    this.saveAiRecent();
+  }
+
+  setAiSelection(entry: AiSuggestion) {
+    if (entry.type === "query") {
+      this.aiSelection = null;
+      this.aiGenerate.query = entry.label;
+    } else {
+      this.aiSelection = entry;
+      this.aiGenerate.query = entry.label;
+    }
+  }
+
+  clearAiSelection() {
+    this.aiSelection = null;
+  }
+
+  queueAiSearch(value?: string) {
+    if (typeof window === "undefined") return;
+    const query = normalizeText(value ?? this.aiGenerate.query);
+    if (this.aiSearchTimer) {
+      window.clearTimeout(this.aiSearchTimer);
+    }
+    this.aiSearchTimer = window.setTimeout(() => {
+      void this.runAiSearch(query);
+    }, 250);
+  }
+
+  async runAiSearch(query: string) {
+    const normalized = normalizeText(query);
+    if (normalized.length < 2) {
+      this.aiSuggestions = emptySuggestions();
+      this.aiSearching = false;
+      return;
+    }
+
+    const token = (this.aiSearchToken += 1);
+    this.aiSearching = true;
+
+    try {
+      const res = await actions.flashnote.searchAiSources({ q: normalized });
+      if (token !== this.aiSearchToken) return;
+      const data = this.unwrap(res) as AiSuggestionGroups;
+      this.aiSuggestions = {
+        roadmaps: data.roadmaps ?? [],
+        topics: data.topics ?? [],
+        subjects: data.subjects ?? [],
+        platforms: data.platforms ?? [],
+      };
+    } catch {
+      if (token !== this.aiSearchToken) return;
+      this.aiSuggestions = emptySuggestions();
+    } finally {
+      if (token === this.aiSearchToken) {
+        this.aiSearching = false;
+      }
+    }
+  }
+
+  get aiSelectionLabel() {
+    if (!this.aiSelection) return "";
+    const label =
+      this.aiSelection.type.charAt(0).toUpperCase() + this.aiSelection.type.slice(1);
+    return `${label}: ${this.aiSelection.label}`;
+  }
+
+  private getAiSeed() {
+    const deckId = this.currentDeckId;
+    const seed = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    if (!deckId) return seed;
+    const key = String(deckId);
+    if (this.aiLastSeedByDeck[key] === seed) {
+      return `${seed}-${Math.random().toString(36).slice(2, 6)}`;
+    }
+    return seed;
+  }
+
+  openAiModal() {
+    const dialog = document.getElementById("flashnote-ai-modal") as HTMLDialogElement | null;
+    if (dialog && typeof dialog.showModal === "function" && !dialog.open) {
+      dialog.showModal();
+    }
+  }
+
+  closeAiModal() {
+    const dialog = document.getElementById("flashnote-ai-modal") as HTMLDialogElement | null;
+    if (dialog && dialog.open) {
+      dialog.close();
+    }
+  }
+
+  async attemptAiGenerate() {
+    const query = normalizeText(this.aiGenerate.query);
+    if (!query && !this.aiSelection) {
+      this.openAiModal();
+      return;
+    }
+    await this.generateAiCards({ query, selection: this.aiSelection ?? undefined });
+  }
+
+  async generateAiFromModal() {
+    await this.generateAiCards({
+      query: normalizeText(this.aiGenerate.query) || undefined,
+      difficulty: normalizeText(this.aiGenerate.difficulty) || undefined,
+      limit: this.aiGenerate.limit,
+      selection: this.aiSelection ?? undefined,
+    });
+  }
+
+  async generateAiCards(options?: {
+    query?: string;
+    difficulty?: string;
+    limit?: number;
+    selection?: AiSuggestion;
+  }) {
+    if (!this.currentDeckId) {
+      this.error = "Select a deck first.";
+      return;
+    }
+
+    if (!this.isPaid) {
+      this.aiPaywallVisible = true;
+      return;
+    }
+
+    this.loading = true;
+    this.error = null;
+    this.success = null;
+    this.aiPaywallVisible = false;
+    this.aiError = null;
+    this.aiSuccess = null;
+
+    try {
+      const seed = this.getAiSeed();
+      const limitValue = Number(options?.limit ?? this.aiGenerate.limit);
+      const limit = Number.isFinite(limitValue) ? limitValue : 50;
+
+      const res = await actions.flashnote.generateCardsWithAI({
+        deckId: this.currentDeckId,
+        query: options?.query || undefined,
+        selection:
+          options?.selection && options.selection.type !== "query"
+            ? {
+                type: options.selection.type as "platform" | "subject" | "topic" | "roadmap",
+                id: options.selection.id,
+                label: options.selection.label,
+                contextLabel: options.selection.contextLabel ?? undefined,
+              }
+            : undefined,
+        difficulty: options?.difficulty || undefined,
+        limit,
+        seed,
+      });
+
+      if ((res as any)?.error?.code === "PAYMENT_REQUIRED") {
+        this.aiPaywallVisible = true;
+        return;
+      }
+
+      const data = this.unwrap(res) as { created: number };
+      await this.openDeck(this.currentDeckId);
+      await this.loadDecks();
+      if (this.currentDeckId) {
+        this.aiLastSeedByDeck[String(this.currentDeckId)] = seed;
+      }
+      this.aiSuccess = data.created > 0 ? `AI generated ${data.created} cards.` : "No cards generated.";
+      if (options?.selection) {
+        this.addAiRecent({
+          ...options.selection,
+          ts: Date.now(),
+        });
+      } else if (options?.query) {
+        this.addAiRecent({
+          type: "query",
+          id: "",
+          label: options.query,
+          ts: Date.now(),
+        });
+      }
+      this.closeAiModal();
+    } catch (err: any) {
+      this.aiError = err?.message || "AI generation failed.";
+    } finally {
+      this.loading = false;
+    }
   }
 
   async loadDecks() {
@@ -173,37 +449,6 @@ export class FlashnoteStore extends AvBaseStore implements ReturnType<typeof def
       this.success = "Card added.";
     } catch (err: any) {
       this.error = err?.message || "Unable to add card.";
-    } finally {
-      this.loading = false;
-    }
-  }
-
-  async importFromQuiz() {
-    if (!this.currentDeckId) {
-      this.error = "Select a deck first.";
-      return;
-    }
-
-    this.loading = true;
-    this.error = null;
-    this.success = null;
-
-    try {
-      const limitValue = Number(this.quizImport.limit);
-      const limit = Number.isFinite(limitValue) ? limitValue : undefined;
-
-      const res = await actions.flashnote.importFromQuizQuestions({
-        deckId: this.currentDeckId,
-        quizId: this.quizImport.quizId || undefined,
-        topicId: this.quizImport.topicId || undefined,
-        limit,
-      });
-      const data = this.unwrap(res) as { imported: number; skipped: number };
-      await this.openDeck(this.currentDeckId);
-      await this.loadDecks();
-      this.success = `Imported ${data.imported} cards.`;
-    } catch (err: any) {
-      this.error = err?.message || "Quiz import failed.";
     } finally {
       this.loading = false;
     }

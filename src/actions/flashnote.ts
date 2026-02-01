@@ -13,7 +13,7 @@ import {
 } from "astro:db";
 import { z } from "astro:schema";
 import { requireUser } from "./_guards";
-import { fetchQuizQuestions } from "../lib/quizApi";
+import { fetchQuizQuestions, fetchQuizSources } from "../lib/quizApi";
 import { notifyParent } from "../lib/notifyParent";
 import { buildFlashnoteDashboardSummary } from "../dashboard/summary.schema";
 import { pushFlashnoteActivity } from "../lib/pushActivity";
@@ -80,6 +80,24 @@ const importSchema = z.object({
   limit: z.number().int().min(1).max(200).optional(),
 });
 
+const aiGenerateSchema = z.object({
+  deckId: z.union([z.number(), z.string()]),
+  query: z.string().optional(),
+  selection: z
+    .object({
+      type: z.enum(["platform", "subject", "topic", "roadmap"]),
+      id: z.string().min(1),
+      label: z.string().optional(),
+      contextLabel: z.string().optional(),
+    })
+    .optional(),
+  subjectId: z.string().optional(),
+  topicId: z.string().optional(),
+  difficulty: z.string().optional(),
+  limit: z.number().int().min(1).max(200).optional(),
+  seed: z.union([z.string(), z.number()]).optional(),
+});
+
 const sessionSchema = z.object({
   deckId: z.union([z.number(), z.string()]),
 });
@@ -114,6 +132,76 @@ const buildReviewSchedule = (
   nextReviewAt.setDate(nextReviewAt.getDate() + intervalDays);
 
   return { intervalDays, easeFactor, nextReviewAt };
+};
+
+const hashSeed = (value: string) => {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = (hash << 5) - hash + value.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+};
+
+const createSeededRng = (seed: number) => {
+  let t = seed + 0x6d2b79f5;
+  return () => {
+    t += 0x6d2b79f5;
+    let value = Math.imul(t ^ (t >>> 15), t | 1);
+    value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
+    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+  };
+};
+
+const shuffleWithSeed = <T>(items: T[], seed: number) => {
+  const rng = createSeededRng(seed);
+  const result = [...items];
+  for (let i = result.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(rng() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+};
+
+const looksLikeId = (value?: string | null) => {
+  if (!value) return false;
+  return /^\d+$/.test(value.trim());
+};
+
+const normalizeForMatch = (value?: string | null) => normalizeText(value).toLowerCase();
+
+const buildMatchText = (item: Record<string, any>) =>
+  [
+    item.topicName,
+    item.subjectName,
+    item.platformName,
+    item.roadmapName,
+    item.questionText,
+    item.answerText,
+    item.explanation,
+    item.topicId,
+    item.subjectId,
+    item.platformId,
+    item.roadmapId,
+  ]
+    .filter(Boolean)
+    .map((entry) => String(entry).toLowerCase())
+    .join(" ");
+
+const resolveSelectionFromQuery = async (token: string, query: string) => {
+  if (!query || query.length < 2) return null;
+  const sources = await fetchQuizSources({ token, q: query });
+  const match =
+    sources.roadmaps?.[0] ??
+    sources.topics?.[0] ??
+    sources.subjects?.[0] ??
+    sources.platforms?.[0] ??
+    null;
+  if (!match) return null;
+  return {
+    ...match,
+    contextLabel: match.contextLabel ?? undefined,
+  };
 };
 
 const pushDashboard = async (userId: string, event: string, entityId?: string) => {
@@ -469,6 +557,190 @@ export const flashnote = {
       await pushDashboard(user.id, "quiz.imported", String(deck.id ?? ""));
 
       return { imported, skipped };
+    },
+  }),
+
+  searchAiSources: defineAction({
+    accept: "json",
+    input: z.object({ q: z.string().optional() }),
+    handler: async ({ q }, context: ActionAPIContext) => {
+      requireUser(context);
+      const locals = context.locals as App.Locals | undefined;
+      const token = locals?.sessionToken ?? null;
+      if (!token) {
+        throw new ActionError({ code: "UNAUTHORIZED", message: "AI suggestions require a session token." });
+      }
+
+      const query = normalizeText(q);
+      if (query.length < 2) {
+        return { roadmaps: [], topics: [], subjects: [], platforms: [] };
+      }
+
+      const sources = await fetchQuizSources({ token, q: query });
+
+      return {
+        roadmaps: sources.roadmaps ?? [],
+        topics: sources.topics ?? [],
+        subjects: sources.subjects ?? [],
+        platforms: sources.platforms ?? [],
+      };
+    },
+  }),
+
+  generateCardsWithAI: defineAction({
+    accept: "json",
+    input: aiGenerateSchema,
+    handler: async (
+      { deckId, query, selection, subjectId, topicId, difficulty, limit, seed },
+      context: ActionAPIContext,
+    ) => {
+      const user = requireUser(context);
+      const locals = context.locals as App.Locals | undefined;
+
+      if (!locals?.user?.isPaid) {
+        throw new ActionError({ code: "PAYMENT_REQUIRED", message: "Pro required" });
+      }
+
+      const token = locals?.sessionToken ?? null;
+      if (!token) {
+        throw new ActionError({ code: "UNAUTHORIZED", message: "AI generation requires a session token." });
+      }
+
+      const id = parseNumberId(deckId, "Deck");
+      const deck = await requireDeck(user.id, id);
+
+      const normalizedQuery = normalizeForMatch(query);
+      let selectionValue = selection ?? null;
+      if (!selectionValue && normalizedQuery) {
+        try {
+          selectionValue = await resolveSelectionFromQuery(token, normalizedQuery);
+        } catch {
+          selectionValue = null;
+        }
+      }
+      const normalizedSubject = normalizeForMatch(subjectId);
+      const normalizedTopic = normalizeForMatch(topicId);
+      const normalizedDifficulty = normalizeForMatch(difficulty);
+
+      const limitValue = Number.isFinite(limit) ? Number(limit) : 50;
+      const safeLimit = Math.min(200, Math.max(1, limitValue));
+      const poolLimit = Math.min(200, Math.max(80, safeLimit * 3));
+
+      const quizQuestions = await fetchQuizQuestions({
+        token,
+        roadmapId:
+          selectionValue?.type === "roadmap" && looksLikeId(selectionValue.id)
+            ? selectionValue.id
+            : undefined,
+        topicId:
+          selectionValue?.type === "topic"
+            ? looksLikeId(selectionValue.id)
+              ? selectionValue.id
+              : undefined
+            : looksLikeId(topicId ?? undefined)
+              ? topicId
+              : undefined,
+        subjectId:
+          selectionValue?.type === "subject" && looksLikeId(selectionValue.id)
+            ? selectionValue.id
+            : undefined,
+        platformId:
+          selectionValue?.type === "platform" && looksLikeId(selectionValue.id)
+            ? selectionValue.id
+            : undefined,
+        limit: poolLimit,
+      });
+
+      if (!quizQuestions.items || quizQuestions.items.length === 0) {
+        return { created: 0, skipped: 0 };
+      }
+
+      const existingRows = await db
+        .select({ sourceRefId: Flashcards.sourceRefId, front: Flashcards.front })
+        .from(Flashcards)
+        .where(and(eq(Flashcards.deckId, id), eq(Flashcards.userId, user.id)));
+
+      const existingRefs = new Set(existingRows.map((row) => row.sourceRefId).filter(Boolean));
+      const existingFronts = new Set(
+        existingRows.map((row) => normalizeForMatch(row.front)).filter(Boolean),
+      );
+
+      let candidates = quizQuestions.items.filter((item) => {
+        if (!item.questionText || !item.answerText) return false;
+        if (existingRefs.has(item.questionId)) return false;
+        if (existingFronts.has(normalizeForMatch(item.questionText))) return false;
+        if (normalizedDifficulty && normalizeForMatch(item.difficulty) !== normalizedDifficulty) return false;
+        return true;
+      });
+
+      if (!selectionValue) {
+        const intents = [normalizedQuery, normalizedSubject, normalizedTopic].filter(Boolean);
+        if (intents.length > 0) {
+          const matches = candidates.filter((item) => {
+            const text = buildMatchText(item);
+            return intents.some((intent) => text.includes(intent));
+          });
+          if (matches.length > 0) {
+            candidates = matches;
+          }
+        }
+      }
+
+      if (candidates.length === 0) {
+        return { created: 0, skipped: 0 };
+      }
+
+      const numericSeed = typeof seed === "number" && Number.isFinite(seed) ? seed : undefined;
+      const seedValue =
+        numericSeed ??
+        (typeof seed === "string" && seed.length > 0
+          ? hashSeed(seed)
+          : hashSeed(`${Date.now()}-${Math.random().toString(36).slice(2)}`));
+
+      const shuffled = shuffleWithSeed(candidates, seedValue);
+      const selected = shuffled.slice(0, safeLimit);
+
+      const now = new Date();
+      const toInsert = selected
+        .map((item) => {
+          const answer = normalizeText(item.answerText);
+          const explanation = normalizeText(item.explanation ?? "");
+          const back = explanation ? `${answer}\n\n${explanation}` : answer;
+
+          return {
+            deckId: id,
+            userId: user.id,
+            front: normalizeText(item.questionText),
+            back,
+            sourceType: "ai" as const,
+            sourceRefId: item.questionId,
+            createdAt: now,
+            updatedAt: now,
+          };
+        })
+        .filter((item) => item.front && item.back);
+
+      if (toInsert.length > 0) {
+        await db.insert(Flashcards).values(toInsert);
+        await db
+          .update(FlashcardDecks)
+          .set({ updatedAt: now })
+          .where(and(eq(FlashcardDecks.id, id), eq(FlashcardDecks.ownerId, user.id)));
+      }
+
+      const created = toInsert.length;
+      const skipped = selected.length - created;
+
+      void notifyParent({
+        userId: user.id,
+        title: "FlashNote AI generation completed",
+        body: `Generated ${created} cards in “${deck.title}”.`,
+        type: "flashnote",
+      });
+
+      await pushDashboard(user.id, "ai.generated", String(deck.id ?? ""));
+
+      return { created, skipped, seed: String(seedValue) };
     },
   }),
 

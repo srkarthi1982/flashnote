@@ -26,7 +26,7 @@ export const Flashcards = defineTable({
     hint: column.text({ optional: true }),
     extra: column.text({ optional: true }),
     isActive: column.boolean({ default: true }),
-    sourceType: column.text({ enum: ["manual", "quiz"], default: "manual" }),
+    sourceType: column.text({ enum: ["manual", "quiz", "ai"], default: "manual" }),
     sourceRefId: column.text({ optional: true }),
     createdAt: column.date({ default: NOW }),
     updatedAt: column.date({ default: NOW }),

@@ -14,7 +14,7 @@ export type Flashcard = {
   userId: string;
   front: string;
   back: string;
-  sourceType: "manual" | "quiz";
+  sourceType: "manual" | "quiz" | "ai";
   sourceRefId?: string | null;
   createdAt?: Date | string | null;
   updatedAt?: Date | string | null;

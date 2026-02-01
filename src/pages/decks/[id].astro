@@ -6,6 +6,7 @@ import {
   AvContainer,
   AvEmptyState,
   AvInput,
+  AvSelect,
   AvTextarea,
 } from "@ansiversa/components";
 import AppShell from "../../layouts/AppShell.astro";
@@ -13,9 +14,10 @@ import AppShell from "../../layouts/AppShell.astro";
 const { id } = Astro.params;
 const deckId = id ?? "";
 const deckKey = JSON.stringify(deckId);
+const isPaid = Boolean(Astro.locals.user?.isPaid);
 
 const title = "Deck details – FlashNote";
-const description = "Review cards, add new ones, or import from Quiz.";
+const description = "Review cards, add new ones, or generate AI-curated decks.";
 ---
 
 <AppShell title={title} description={description}>
@@ -31,7 +33,11 @@ const description = "Review cards, add new ones, or import from Quiz.";
     </AvContainer>
   </section>
 
-  <section class="av-section" x-data x-init={`$store.flashnote.openDeck(${deckKey})`}>
+  <section
+    class="av-section"
+    x-data
+    x-init={`$store.flashnote.setBillingStatus(${JSON.stringify(isPaid)}); $store.flashnote.initAiSearch(); $store.flashnote.openDeck(${deckKey})`}
+  >
     <AvContainer>
       <div class="av-auth-stack-lg">
         <AvCard className="av-auth-stack-md">
@@ -77,35 +83,143 @@ const description = "Review cards, add new ones, or import from Quiz.";
 
         <AvCard variant="soft" className="av-auth-stack-md">
           <div class="av-auth-stack-sm">
-            <h2 class="av-card-heading">Import from Quiz</h2>
-            <p class="av-text-soft">Bring in questions by quiz or topic ID and turn them into flashcards.</p>
-            <form class="av-auth-stack-sm" @submit.prevent="$store.flashnote.importFromQuiz()">
-              <div class="av-grid-2">
-                <AvInput
-                  label="Quiz ID"
-                  name="quiz-id"
-                  placeholder="Optional"
-                  x-model="$store.flashnote.quizImport.quizId"
-                />
-                <AvInput
-                  label="Topic ID"
-                  name="topic-id"
-                  placeholder="Optional"
-                  x-model="$store.flashnote.quizImport.topicId"
-                />
-              </div>
+            <h2 class="av-card-heading">Generate with AI</h2>
+            <p class="av-text-soft">Describe what you want and get an AI-curated set of flashcards.</p>
+            <form class="av-auth-stack-sm" @submit.prevent="$store.flashnote.attemptAiGenerate()">
               <AvInput
-                label="Limit"
-                name="quiz-limit"
-                type="number"
-                min="1"
-                max="200"
-                x-model="$store.flashnote.quizImport.limit"
+                label="What do you want to learn?"
+                name="ai-query"
+                placeholder="C# arrays and lists"
+                x-model="$store.flashnote.aiGenerate.query"
+                @input="$store.flashnote.clearAiSelection(); $store.flashnote.queueAiSearch($event.target.value)"
               />
-              <div class="av-row-wrap">
-                <AvButton type="submit" variant="ghost" :disabled="$store.flashnote.loading">Import</AvButton>
+              <p class="av-text-soft">
+                Examples: “Microbiology: bacteria vs viruses”, “Binary search trees”, “Photosynthesis”.
+              </p>
+              <div class="av-auth-stack-xs">
+                <template x-if="$store.flashnote.aiRecent.length > 0">
+                  <div class="av-auth-stack-xxs">
+                    <p class="av-text-soft">Recent</p>
+                    <div class="av-row-wrap">
+                      <template x-for="item in $store.flashnote.aiRecent" :key="`${item.type}-${item.id}-${item.label}`">
+                        <button
+                          type="button"
+                          class="av-btn-ghost av-btn-sm"
+                          @click="$store.flashnote.setAiSelection(item)"
+                        >
+                          <span x-text="item.label"></span>
+                        </button>
+                      </template>
+                    </div>
+                  </div>
+                </template>
+
+                <div class="av-auth-stack-xxs" x-show="$store.flashnote.aiSearching || $store.flashnote.aiSuggestions.roadmaps.length || $store.flashnote.aiSuggestions.topics.length || $store.flashnote.aiSuggestions.subjects.length || $store.flashnote.aiSuggestions.platforms.length">
+                  <p class="av-text-soft">AI suggestions</p>
+                  <div class="av-auth-stack-xxs">
+                    <template x-if="$store.flashnote.aiSuggestions.roadmaps.length > 0">
+                      <div class="av-auth-stack-xxs">
+                        <p class="av-text-soft">Roadmaps</p>
+                        <template x-for="item in $store.flashnote.aiSuggestions.roadmaps" :key="`roadmap-${item.id}`">
+                          <button
+                            type="button"
+                            class="av-card av-card-soft av-auth-stack-xxs"
+                            @click="$store.flashnote.setAiSelection(item)"
+                          >
+                            <div class="av-row-between">
+                              <div>
+                                <p class="av-text-strong" x-text="item.label"></p>
+                                <p class="av-text-soft" x-show="item.contextLabel" x-text="item.contextLabel"></p>
+                              </div>
+                              <span class="av-badge-soft">Roadmap</span>
+                            </div>
+                          </button>
+                        </template>
+                      </div>
+                    </template>
+
+                    <template x-if="$store.flashnote.aiSuggestions.topics.length > 0">
+                      <div class="av-auth-stack-xxs">
+                        <p class="av-text-soft">Topics</p>
+                        <template x-for="item in $store.flashnote.aiSuggestions.topics" :key="`topic-${item.id}`">
+                          <button
+                            type="button"
+                            class="av-card av-card-soft av-auth-stack-xxs"
+                            @click="$store.flashnote.setAiSelection(item)"
+                          >
+                            <div class="av-row-between">
+                              <div>
+                                <p class="av-text-strong" x-text="item.label"></p>
+                                <p class="av-text-soft" x-show="item.contextLabel" x-text="item.contextLabel"></p>
+                              </div>
+                              <span class="av-badge-soft">Topic</span>
+                            </div>
+                          </button>
+                        </template>
+                      </div>
+                    </template>
+
+                    <template x-if="$store.flashnote.aiSuggestions.subjects.length > 0">
+                      <div class="av-auth-stack-xxs">
+                        <p class="av-text-soft">Subjects</p>
+                        <template x-for="item in $store.flashnote.aiSuggestions.subjects" :key="`subject-${item.id}`">
+                          <button
+                            type="button"
+                            class="av-card av-card-soft av-auth-stack-xxs"
+                            @click="$store.flashnote.setAiSelection(item)"
+                          >
+                            <div class="av-row-between">
+                              <div>
+                                <p class="av-text-strong" x-text="item.label"></p>
+                                <p class="av-text-soft" x-show="item.contextLabel" x-text="item.contextLabel"></p>
+                              </div>
+                              <span class="av-badge-soft">Subject</span>
+                            </div>
+                          </button>
+                        </template>
+                      </div>
+                    </template>
+
+                    <template x-if="$store.flashnote.aiSuggestions.platforms.length > 0">
+                      <div class="av-auth-stack-xxs">
+                        <p class="av-text-soft">Platforms</p>
+                        <template x-for="item in $store.flashnote.aiSuggestions.platforms" :key="`platform-${item.id}`">
+                          <button
+                            type="button"
+                            class="av-card av-card-soft av-auth-stack-xxs"
+                            @click="$store.flashnote.setAiSelection(item)"
+                          >
+                            <div class="av-row-between">
+                              <div>
+                                <p class="av-text-strong" x-text="item.label"></p>
+                              </div>
+                              <span class="av-badge-soft">Platform</span>
+                            </div>
+                          </button>
+                        </template>
+                      </div>
+                    </template>
+                  </div>
+                </div>
               </div>
+              <div class="av-row-wrap">
+                <AvButton type="submit" :disabled="$store.flashnote.loading">Generate</AvButton>
+                <AvButton type="button" variant="ghost" @click="$store.flashnote.openAiModal()">
+                  Advanced options
+                </AvButton>
+              </div>
+              <p class="av-text-soft" x-show="$store.flashnote.aiSelection" x-text="`Generating from: ${$store.flashnote.aiSelectionLabel}`"></p>
+              <p class="av-text-soft">Each generation gives a fresh mix. Try again to get a new set.</p>
+              <p class="av-text-soft">Tip: Roadmaps generate a broader mix.</p>
             </form>
+
+            <div class="av-card av-card-soft av-auth-stack-xs" x-show="$store.flashnote.aiPaywallVisible">
+              <p class="av-text-strong">AI-generated flashcards are available in Pro.</p>
+              <AvButton href="/pricing" variant="ghost">View pricing</AvButton>
+            </div>
+
+            <p class="av-text-soft" x-show="$store.flashnote.aiError" x-text="$store.flashnote.aiError"></p>
+            <p class="av-text-soft" x-show="$store.flashnote.aiSuccess" x-text="$store.flashnote.aiSuccess"></p>
           </div>
         </AvCard>
 
@@ -118,7 +232,7 @@ const description = "Review cards, add new ones, or import from Quiz.";
           <template x-if="$store.flashnote.cards.length === 0 && !$store.flashnote.loading">
             <AvEmptyState
               title="No cards yet"
-              description="Add a card or import from Quiz to start studying."
+              description="Add a card or generate with AI to start studying."
             />
           </template>
 
@@ -129,11 +243,48 @@ const description = "Review cards, add new ones, or import from Quiz.";
                   <p class="av-text-strong" x-text="card.front"></p>
                   <p class="av-text-soft" x-text="card.back"></p>
                 </div>
-                <p class="av-text-soft" x-text="card.sourceType === 'quiz' ? 'Imported from Quiz' : 'Manual card'"></p>
+                <p
+                  class="av-text-soft"
+                  x-text="card.sourceType === 'manual' ? 'Manual card' : 'AI-curated'"
+                ></p>
               </div>
             </template>
           </div>
         </AvCard>
+
+        <dialog id="flashnote-ai-modal" class="av-dialog" aria-modal="true" aria-labelledby="ai-modal-title">
+          <div class="av-dialog__panel" role="document">
+            <div class="av-dialog__header">
+              <h2 class="av-dialog__title" id="ai-modal-title">Generate flashcards with AI</h2>
+            </div>
+
+            <form class="av-auth-stack-sm" @submit.prevent="$store.flashnote.generateAiFromModal()">
+              <AvSelect
+                label="Difficulty"
+                name="ai-difficulty"
+                x-model="$store.flashnote.aiGenerate.difficulty"
+              >
+                <option value="">Any difficulty</option>
+                <option value="Easy">Easy</option>
+                <option value="Medium">Medium</option>
+                <option value="Advanced">Advanced</option>
+              </AvSelect>
+
+              <AvSelect label="Number of cards" name="ai-limit" x-model="$store.flashnote.aiGenerate.limit">
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+              </AvSelect>
+
+              <div class="av-row-wrap">
+                <AvButton type="button" variant="ghost" @click="$store.flashnote.closeAiModal()">
+                  Cancel
+                </AvButton>
+                <AvButton type="submit" :disabled="$store.flashnote.loading">Generate</AvButton>
+              </div>
+            </form>
+          </div>
+        </dialog>
       </div>
     </AvContainer>
   </section>
