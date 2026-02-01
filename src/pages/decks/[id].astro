@@ -203,7 +203,12 @@ const description = "Review cards, add new ones, or generate AI-curated decks.";
                 </div>
               </div>
               <div class="av-row-wrap">
-                <AvButton type="submit" :disabled="$store.flashnote.loading">Generate</AvButton>
+                <AvButton
+                  type="submit"
+                  :disabled="$store.flashnote.loading"
+                >
+                  Generate
+                </AvButton>
                 <AvButton type="button" variant="ghost" @click="$store.flashnote.openAiModal()">
                   Advanced options
                 </AvButton>

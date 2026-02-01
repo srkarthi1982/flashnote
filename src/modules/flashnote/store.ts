@@ -279,13 +279,15 @@ export class FlashnoteStore extends AvBaseStore implements ReturnType<typeof def
     limit?: number;
     selection?: AiSuggestion;
   }) {
-    if (!this.currentDeckId) {
-      this.error = "Select a deck first.";
+    if (!this.currentDeckId || !this.currentDeck) {
+      this.error = "Deck not found. Create a new deck first.";
+      this.aiError = "Deck not found. Create a new deck first.";
       return;
     }
 
     if (!this.isPaid) {
       this.aiPaywallVisible = true;
+      this.closeAiModal();
       return;
     }
 
@@ -320,6 +322,7 @@ export class FlashnoteStore extends AvBaseStore implements ReturnType<typeof def
 
       if ((res as any)?.error?.code === "PAYMENT_REQUIRED") {
         this.aiPaywallVisible = true;
+        this.closeAiModal();
         return;
       }
 
@@ -345,7 +348,9 @@ export class FlashnoteStore extends AvBaseStore implements ReturnType<typeof def
       }
       this.closeAiModal();
     } catch (err: any) {
-      this.aiError = err?.message || "AI generation failed.";
+      const message = err?.message || "AI generation failed.";
+      this.aiError =
+        message === "Deck not found." ? "Deck not found. Create a new deck first." : message;
     } finally {
       this.loading = false;
     }
