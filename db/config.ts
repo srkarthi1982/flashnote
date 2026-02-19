@@ -1,5 +1,5 @@
 import { defineDb } from "astro:db";
-import { FlashcardDecks, FlashcardReviews, Flashcards, StudySessions } from "./tables";
+import { Faq, FlashcardDecks, FlashcardReviews, Flashcards, StudySessions } from "./tables";
 
 export default defineDb({
   tables: {
@@ -7,5 +7,6 @@ export default defineDb({
     Flashcards,
     StudySessions,
     FlashcardReviews,
+    Faq,
   },
 });

@@ -25,6 +25,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
     "/reset",
     "/reset-password",
   ]);
+  const apiPublicRoutes = new Set(["/api/faqs.json"]);
 
   // Allow static assets
   if (
@@ -125,7 +126,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   // ✅ ENFORCE AUTH (protect everything in mini-app)
   if (!locals.isAuthenticated) {
-    if (publicRoutes.has(pathname)) {
+    if (publicRoutes.has(pathname) || apiPublicRoutes.has(pathname)) {
       return next();
     }
     const loginUrl = new URL("/login", ROOT_APP_URL);

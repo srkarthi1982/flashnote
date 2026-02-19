@@ -1,0 +1,33 @@
+---
+import { AvCard } from "@ansiversa/components";
+import AppAdminShell from "../../layouts/AppAdminShell.astro";
+
+const adminItems = [
+  { label: "FAQ", href: "/admin/faq", description: "Manage flashnote FAQs" },
+  { label: "Session Debug", href: "/admin/session", description: "Inspect current session payload" },
+];
+---
+
+<AppAdminShell
+  title="Admin Dashboard – FlashNote"
+  description="Manage FlashNote administration."
+  crumbItems={[
+    { label: "Home", href: "/" },
+    { label: "Administration" },
+  ]}
+>
+  <AvCard variant="soft" className="av-auth-stack-sm">
+    <div class="av-grid-auto av-grid-auto--260">
+      {adminItems.map((item) => (
+        <AvCard variant="soft" className="av-card--fullheight">
+          <div class="av-auth-stack-xxs">
+            <h3 class="av-card-heading av-m-0">
+              <a href={item.href} class="av-text-strong">{item.label}</a>
+            </h3>
+            <p class="av-text-soft av-m-0">{item.description}</p>
+          </div>
+        </AvCard>
+      ))}
+    </div>
+  </AvCard>
+</AppAdminShell>
