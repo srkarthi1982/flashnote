@@ -32,6 +32,7 @@ const defaultState = () => ({
   currentDeckId: null as number | null,
   currentDeck: null as FlashcardDeck | null,
   decks: [] as FlashcardDeck[],
+  bookmarks: new Set<string>(),
   cards: [] as Flashcard[],
   loading: false,
   error: null as string | null,
@@ -75,6 +76,7 @@ export class FlashnoteStore extends AvBaseStore implements ReturnType<typeof def
   currentDeckId: number | null = null;
   currentDeck: FlashcardDeck | null = null;
   decks: FlashcardDeck[] = [];
+  bookmarks: Set<string> = new Set();
   cards: Flashcard[] = [];
   loading = false;
   error: string | null = null;
@@ -105,6 +107,9 @@ export class FlashnoteStore extends AvBaseStore implements ReturnType<typeof def
     if (!initial) return;
     Object.assign(this, defaultState(), initial);
     this.decks = (initial.decks ?? []) as FlashcardDeck[];
+    this.bookmarks = initial.bookmarks instanceof Set
+      ? new Set(Array.from(initial.bookmarks).map((id) => String(id)))
+      : new Set();
     this.cards = (initial.cards ?? []) as Flashcard[];
     this.currentDeckId = initial.currentDeckId ?? this.currentDeckId;
     this.currentDeck = (initial.currentDeck ?? this.currentDeck) as FlashcardDeck | null;
@@ -124,6 +129,51 @@ export class FlashnoteStore extends AvBaseStore implements ReturnType<typeof def
 
   setBillingStatus(isPaid: boolean) {
     this.isPaid = Boolean(isPaid);
+  }
+
+  isBookmarked(deckId: string | number) {
+    return this.bookmarks.has(String(deckId));
+  }
+
+  private setBookmarkState(deckId: string | number, saved: boolean) {
+    const key = String(deckId);
+    const next = new Set(this.bookmarks);
+    if (saved) {
+      next.add(key);
+    } else {
+      next.delete(key);
+    }
+    this.bookmarks = next;
+  }
+
+  async initBookmarks() {
+    try {
+      const res = await actions.flashnote.listDeckBookmarks({});
+      const data = this.unwrap(res) as { items?: Array<{ deckId: string | number }> };
+      this.bookmarks = new Set((data.items ?? []).map((item) => String(item.deckId)));
+    } catch {
+      this.bookmarks = new Set();
+    }
+  }
+
+  async toggleBookmarkDeck(deck: { id: string | number; title?: string | null }) {
+    const deckId = String(deck.id ?? "").trim();
+    if (!deckId) return;
+    const wasSaved = this.isBookmarked(deckId);
+    this.setBookmarkState(deckId, !wasSaved);
+
+    try {
+      const res = await actions.flashnote.toggleBookmark({
+        entityType: "deck",
+        entityId: deckId,
+        label: normalizeText(deck.title ?? "") || "Untitled deck",
+      });
+      const data = this.unwrap(res) as { saved?: boolean };
+      this.setBookmarkState(deckId, Boolean(data?.saved));
+    } catch (err: any) {
+      this.setBookmarkState(deckId, wasSaved);
+      this.error = err?.message || "Unable to update bookmark.";
+    }
   }
 
   initAiSearch() {

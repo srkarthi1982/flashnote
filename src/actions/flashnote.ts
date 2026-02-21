@@ -13,6 +13,7 @@ import {
 } from "astro:db";
 import { z } from "astro:schema";
 import { requireUser } from "./_guards";
+import { listDeckBookmarks, toggleBookmark } from "./bookmarks";
 import { fetchQuizQuestions, fetchQuizSources } from "../lib/quizApi";
 import { notifyParent } from "../lib/notifyParent";
 import { buildFlashnoteDashboardSummary } from "../dashboard/summary.schema";
@@ -224,6 +225,9 @@ const pushDashboard = async (userId: string, event: string, entityId?: string) =
 };
 
 export const flashnote = {
+  listDeckBookmarks,
+  toggleBookmark,
+
   listDecks: defineAction({
     accept: "json",
     handler: async (_input, context: ActionAPIContext) => {

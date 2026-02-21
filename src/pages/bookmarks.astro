@@ -1,0 +1,82 @@
+---
+import { actions } from "astro:actions";
+import {
+  AvBookmarksEmpty,
+  AvBookmarksList,
+  AvBreadcrumb,
+  AvContainer,
+  AvPageHeader,
+} from "@ansiversa/components";
+import AppShell from "../layouts/AppShell.astro";
+
+const user = Astro.locals.user;
+const rootAppUrl = Astro.locals.rootAppUrl ?? "https://ansiversa.com";
+
+if (!user) {
+  const loginUrl = new URL("/login", rootAppUrl);
+  loginUrl.searchParams.set("returnTo", Astro.url.toString());
+  return Astro.redirect(loginUrl.toString());
+}
+
+const listResult = await Astro.callAction(actions.flashnote.listDeckBookmarks, {});
+const bookmarkData = (listResult as any)?.data ?? listResult ?? {};
+const items = Array.isArray(bookmarkData?.items) ? bookmarkData.items : [];
+
+const bookmarkListItems = items.map((item: any) => ({
+  title: item.title || "Untitled deck",
+  subtitle: item.bookmarkedAt
+    ? `Saved ${new Date(item.bookmarkedAt).toLocaleDateString()}`
+    : "Saved in FlashNote",
+  href: `/decks/${item.deckId}`,
+  rightSlot: {
+    active: true,
+    activeExpr: "true",
+    title: "Save bookmark",
+    activeTitle: "Remove bookmark",
+    size: "sm" as const,
+    onClick: `toggleBookmarkItem('${String(item.deckId).replace(/'/g, "\\'")}', ${JSON.stringify(item.title || "Untitled deck")})`,
+  },
+}));
+
+const title = "Bookmarks - FlashNote";
+const description = "Saved in FlashNote";
+---
+
+<AppShell title={title} description={description}>
+  <section class="av-faq-public__crumb">
+    <AvContainer size="default">
+      <AvBreadcrumb
+        items={[
+          { label: "Home", href: "/" },
+          { label: "Bookmarks" },
+        ]}
+      />
+    </AvContainer>
+  </section>
+
+  <AvPageHeader title="Bookmarks" description="Saved in FlashNote" />
+
+  <section class="av-section">
+    <AvContainer>
+      <div
+        x-data="{
+          busy: false,
+          async toggleBookmarkItem(deckId, label) {
+            if (this.busy) return;
+            this.busy = true;
+            try {
+              await $store.flashnote.toggleBookmarkDeck({ id: String(deckId), title: label || '' });
+              window.location.reload();
+            } catch (err) {
+              console.error(err);
+            } finally {
+              this.busy = false;
+            }
+          }
+        }"
+      >
+        {items.length === 0 ? <AvBookmarksEmpty /> : <AvBookmarksList items={bookmarkListItems} />}
+      </div>
+    </AvContainer>
+  </section>
+</AppShell>

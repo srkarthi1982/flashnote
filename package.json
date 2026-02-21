@@ -18,7 +18,7 @@
     "db:push": "astro db push --remote"
   },
   "dependencies": {
-    "@ansiversa/components": "0.0.141",
+    "@ansiversa/components": "0.0.142",
     "@astrojs/alpinejs": "^0.4.9",
     "@astrojs/db": "^0.18.3",
     "@astrojs/vercel": "^9.0.2",

@@ -1,5 +1,6 @@
 ---
 import {
+  AvBookmarkButton,
   AvBreadcrumb,
   AvButton,
   AvCard,
@@ -21,7 +22,7 @@ const description = "Create and manage your flashcard decks.";
     </AvContainer>
   </section>
 
-  <section class="av-section" x-data x-init="$store.flashnote.loadDecks()">
+  <section class="av-section" x-data x-init="Promise.all([$store.flashnote.loadDecks(), $store.flashnote.initBookmarks()])">
     <AvContainer>
       <div class="av-auth-stack-lg">
         <AvCard className="av-auth-stack-md">
@@ -81,6 +82,14 @@ const description = "Create and manage your flashcard decks.";
                   </div>
                   <div class="av-row-wrap">
                     <p class="av-text-soft" x-text="`${deck.cardsCount ?? 0} cards`"></p>
+                    <AvBookmarkButton
+                      active={false}
+                      activeExpr="$store.flashnote.isBookmarked(deck.id)"
+                      title="Save bookmark"
+                      activeTitle="Remove bookmark"
+                      onClick="$store.flashnote.toggleBookmarkDeck(deck)"
+                      size="sm"
+                    />
                     <a class="av-btn-primary av-btn-sm" x-bind:href="`/decks/${deck.id}`">Open</a>
                   </div>
                 </div>

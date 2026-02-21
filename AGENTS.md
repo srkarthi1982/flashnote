@@ -86,6 +86,7 @@ Final run:
 
 ## Task Log (Recent)
 - Keep newest first; include date and short summary.
+- 2026-02-21 FlashNote Bookmarks V1 shipped (deck): added DB `Bookmark` table + indexes and wired DB config; added actions `listDeckBookmarks`/`toggleBookmark`; wired store bookmark Set with optimistic toggle; added deck-list `AvBookmarkButton`; added `/bookmarks` page (`AvBookmarksEmpty`/`AvBookmarksList`); enabled gated mini-app menu link via `bookmarksHref=\"/bookmarks\"`; bumped `@ansiversa/components` to exact `0.0.142`. Verification: `npm run db:push` ✅, `npm run typecheck` ✅ (existing hint in `src/actions/baseRepository.ts`), `npm run build` ✅. DB sanity: remote table `Bookmark` confirmed via `astro db shell --remote`; bookmark rows currently empty in this environment. Caveat: production authenticated UI smoke test not executed from CLI-only session.
 - 2026-02-19 Bumped `/components` to `0.0.141` and refreshed lockfile for latest shared FAQ order-arrow release; verification: `npm run build` ✅.
 - 2026-02-19 Bumped `/components` to `0.0.140` and refreshed lockfile to consume the latest shared release; verification: `npm run build` ✅.
 - 2026-02-19 Bumped `@ansiversa/components` to `0.0.139` (AvMiniAppBar AppLogo support) and verified with `npm run build` (pass).
