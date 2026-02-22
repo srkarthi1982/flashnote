@@ -4,8 +4,10 @@ import {
   AvBreadcrumb,
   AvButton,
   AvCard,
+  AvConfirmDialog,
   AvContainer,
   AvEmptyState,
+  AvIcon,
   AvInput,
   AvTextarea,
 } from "@ansiversa/components";
@@ -90,6 +92,16 @@ const description = "Create and manage your flashcard decks.";
                       onClick="$store.flashnote.toggleBookmarkDeck(deck)"
                       size="sm"
                     />
+                    <AvButton
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      title="Delete"
+                      x-bind:aria-label="`Delete ${deck.title || 'item'}`"
+                      @click.prevent="$store.flashnote.requestDeleteDeck(deck); const dialogTitle = document.getElementById('flashnote-delete-dialog-title'); if (dialogTitle) dialogTitle.textContent = $store.flashnote.pendingDeleteDeckTitle ? `Delete '${$store.flashnote.pendingDeleteDeckTitle}'?` : 'Delete this item?'; window.AvDialog?.open('flashnote-delete-dialog')"
+                    >
+                      <AvIcon name="trash" size="sm" />
+                    </AvButton>
                     <a class="av-btn-primary av-btn-sm" x-bind:href="`/decks/${deck.id}`">Open</a>
                   </div>
                 </div>
@@ -97,6 +109,17 @@ const description = "Create and manage your flashcard decks.";
             </template>
           </div>
         </AvCard>
+
+        <AvConfirmDialog
+          id="flashnote-delete-dialog"
+          headline="Delete this item?"
+          description="This action cannot be undone."
+          confirmLabel="Delete"
+          cancelLabel="Cancel"
+          variant="danger"
+          @av-confirm="$store.flashnote.confirmDeleteDeck()"
+          @av-cancel="$store.flashnote.clearPendingDeleteDeck()"
+        />
       </div>
     </AvContainer>
   </section>

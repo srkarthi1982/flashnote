@@ -37,6 +37,8 @@ const defaultState = () => ({
   loading: false,
   error: null as string | null,
   success: null as string | null,
+  pendingDeleteDeckId: null as number | null,
+  pendingDeleteDeckTitle: null as string | null,
   isPaid: false,
   aiError: null as string | null,
   aiSuccess: null as string | null,
@@ -81,6 +83,8 @@ export class FlashnoteStore extends AvBaseStore implements ReturnType<typeof def
   loading = false;
   error: string | null = null;
   success: string | null = null;
+  pendingDeleteDeckId: number | null = null;
+  pendingDeleteDeckTitle: string | null = null;
   isPaid = false;
   aiError: string | null = null;
   aiSuccess: string | null = null;
@@ -467,6 +471,52 @@ export class FlashnoteStore extends AvBaseStore implements ReturnType<typeof def
       this.success = "Deck created.";
     } catch (err: any) {
       this.error = err?.message || "Unable to create deck.";
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  requestDeleteDeck(deck: FlashcardDeck) {
+    const id = Number(deck?.id);
+    if (!Number.isFinite(id) || id <= 0) return;
+    this.pendingDeleteDeckId = id;
+    this.pendingDeleteDeckTitle = normalizeText(deck?.title) || null;
+  }
+
+  clearPendingDeleteDeck() {
+    this.pendingDeleteDeckId = null;
+    this.pendingDeleteDeckTitle = null;
+  }
+
+  async confirmDeleteDeck() {
+    if (!this.pendingDeleteDeckId) return;
+
+    this.loading = true;
+    this.error = null;
+    this.success = null;
+
+    const deckId = this.pendingDeleteDeckId;
+
+    try {
+      await actions.flashnote.deleteDeck({ deckId });
+      await this.loadDecks();
+      if (this.currentDeckId === deckId) {
+        this.currentDeckId = null;
+        this.currentDeck = null;
+        this.cards = [];
+      }
+      this.success = "Deleted.";
+      this.clearPendingDeleteDeck();
+    } catch (err: any) {
+      this.error = "Failed to delete. Please try again.";
+      if (typeof window !== "undefined") {
+        window.setTimeout(() => {
+          (window as any).AvDialog?.open?.("flashnote-delete-dialog");
+        }, 0);
+      }
+      if (import.meta.env.DEV) {
+        console.warn("Failed to delete deck", err);
+      }
     } finally {
       this.loading = false;
     }
