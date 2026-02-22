@@ -20,7 +20,7 @@
     "postdb:push": "npm run db:triggers"
   },
   "dependencies": {
-    "@ansiversa/components": "^0.0.144",
+    "@ansiversa/components": "^0.0.145",
     "@astrojs/alpinejs": "^0.4.9",
     "@astrojs/db": "^0.18.3",
     "@astrojs/vercel": "^9.0.2",
