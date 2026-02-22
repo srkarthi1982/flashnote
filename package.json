@@ -15,7 +15,9 @@
     "astro": "astro",
     "build:remote": "astro build --remote",
     "dev:remote": "astro dev --remote",
-    "db:push": "astro db push --remote"
+    "db:push": "astro db push --remote",
+    "db:triggers": "tsx scripts/apply-bookmark-triggers.ts",
+    "postdb:push": "npm run db:triggers"
   },
   "dependencies": {
     "@ansiversa/components": "0.0.142",
@@ -30,6 +32,8 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.6",
+    "@libsql/client": "^0.17.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }
 }
