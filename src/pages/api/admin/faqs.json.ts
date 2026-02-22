@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { Faq, asc, db, desc, eq } from "astro:db";
+import { Faq, asc, db, desc, eq, sql } from "astro:db";
 import { json, requireAdminApiAccess } from "../../../lib/apiAuth";
 
 type FaqAudience = "user" | "admin";
@@ -69,6 +69,16 @@ export const GET: APIRoute = async ({ request, cookies }) => {
 
   const url = new URL(request.url);
   const audience = normalizeAudience(url.searchParams.get("audience"));
+  const q = (url.searchParams.get("q") || "").trim().toLowerCase();
+  const queryLike = `%${q}%`;
+  const whereClause = q
+    ? sql`${Faq.audience} = ${audience}
+      AND (
+        lower(${Faq.question}) LIKE ${queryLike}
+        OR lower(coalesce(${Faq.category}, '')) LIKE ${queryLike}
+        OR lower(${Faq.audience}) LIKE ${queryLike}
+      )`
+    : eq(Faq.audience, audience);
 
   const items = await db
     .select({
@@ -82,7 +92,7 @@ export const GET: APIRoute = async ({ request, cookies }) => {
       updated_at: Faq.updated_at,
     })
     .from(Faq)
-    .where(eq(Faq.audience, audience))
+    .where(whereClause)
     .orderBy(asc(Faq.sort_order), desc(Faq.updated_at));
 
   return json(200, {
