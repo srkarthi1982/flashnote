@@ -34,13 +34,26 @@ const description = "Review your flashcards with focus.";
               </h1>
               <p class="av-text-soft" x-text="`${$store.flashnote.study.reviewed} reviewed`"></p>
             </div>
-            <div class="av-row-wrap">
+            <div class="av-row-wrap" x-show="$store.flashnote.currentDeck">
               <AvButton href={`/decks/${deckKey}`} variant="ghost">Back to deck</AvButton>
             </div>
           </div>
         </AvCard>
 
-        <AvCard className="av-auth-stack-md" x-show="!$store.flashnote.study.completed">
+        <AvCard
+          className="av-auth-stack-md"
+          x-show="!$store.flashnote.loading && !$store.flashnote.currentDeck"
+        >
+          <div class="av-auth-stack-sm">
+            <p class="av-text-soft" x-text="$store.flashnote.error || 'Deck not found.'"></p>
+            <AvButton href="/decks" variant="ghost">Back to decks</AvButton>
+          </div>
+        </AvCard>
+
+        <AvCard
+          className="av-auth-stack-md"
+          x-show="$store.flashnote.currentDeck && !$store.flashnote.study.completed"
+        >
           <div class="av-auth-stack-sm" x-show="$store.flashnote.activeCard">
             <h2 class="av-card-heading">Front</h2>
             <p class="av-text-strong" x-text="$store.flashnote.activeCard?.front"></p>
@@ -70,9 +83,14 @@ const description = "Review your flashcards with focus.";
             <p class="av-text-soft">No cards available for study.</p>
             <AvButton href={`/decks/${deckKey}`} variant="ghost">Add cards</AvButton>
           </div>
+          <p class="av-text-soft" x-show="$store.flashnote.error" x-text="$store.flashnote.error"></p>
         </AvCard>
 
-        <AvCard variant="soft" className="av-auth-stack-md" x-show="$store.flashnote.study.completed">
+        <AvCard
+          variant="soft"
+          className="av-auth-stack-md"
+          x-show="$store.flashnote.currentDeck && $store.flashnote.study.completed"
+        >
           <div class="av-auth-stack-sm">
             <h2 class="av-card-heading">Session complete</h2>
             <p class="av-text-soft" x-text="`Reviewed ${$store.flashnote.study.reviewed} cards.`"></p>

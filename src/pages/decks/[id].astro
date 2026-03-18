@@ -47,13 +47,23 @@ const description = "Review cards, add new ones, or generate AI-curated decks.";
               <h1 class="av-section-title" x-text="$store.flashnote.currentDeck?.title || 'Deck'"></h1>
               <p class="av-text-soft" x-text="$store.flashnote.currentDeck?.description || 'No description yet.'"></p>
             </div>
-            <div class="av-row-wrap">
+            <div class="av-row-wrap" x-show="$store.flashnote.currentDeck">
               <AvButton href={`/study/${deckId}`}>Start study</AvButton>
             </div>
           </div>
         </AvCard>
 
-        <AvCard className="av-auth-stack-md">
+        <div class="av-auth-stack-sm" x-show="!$store.flashnote.loading && !$store.flashnote.currentDeck">
+          <AvEmptyState
+            title="Deck not found"
+            description="This deck is missing or you may not have access to it."
+          />
+          <div class="av-row-wrap">
+            <AvButton href="/decks" variant="ghost">Back to decks</AvButton>
+          </div>
+        </div>
+
+        <AvCard className="av-auth-stack-md" x-show="$store.flashnote.currentDeck">
           <div class="av-auth-stack-sm">
             <h2 class="av-card-heading">Add a card</h2>
             <form class="av-auth-stack-sm" @submit.prevent="$store.flashnote.createCard()">
@@ -81,7 +91,7 @@ const description = "Review cards, add new ones, or generate AI-curated decks.";
           </div>
         </AvCard>
 
-        <AvCard variant="soft" className="av-auth-stack-md">
+        <AvCard variant="soft" className="av-auth-stack-md" x-show="$store.flashnote.currentDeck">
           <div class="av-auth-stack-sm">
             <h2 class="av-card-heading">Generate with AI</h2>
             <p class="av-text-soft">Describe what you want and get an AI-curated set of flashcards.</p>
@@ -228,7 +238,7 @@ const description = "Review cards, add new ones, or generate AI-curated decks.";
           </div>
         </AvCard>
 
-        <AvCard variant="soft" className="av-auth-stack-md">
+        <AvCard variant="soft" className="av-auth-stack-md" x-show="$store.flashnote.currentDeck">
           <div class="av-row-between">
             <h2 class="av-card-heading">Cards</h2>
             <p class="av-text-soft" x-text="`${$store.flashnote.cards.length} total`"></p>
