@@ -91,6 +91,7 @@ Final run:
 ## Task Log (Recent)
 - 2026-03-18 Launch cleanup: removed unused admin debug route `/admin/session` (deleted page + removed admin dashboard link), leaving FAQ admin path unchanged. Verification: `npm run typecheck` ✅, `npm run build` ✅.
 - 2026-03-18 Full verification sweep (pre-launch stabilization): completed page-by-page route/flow audit, flagged launch risks for founder review, and applied low-risk invalid-deck guardrails on deck detail + study pages (clear fallback messaging, recovery navigation, and hidden action panels when deck context is missing). Verification: `npm run typecheck` ✅, `npm run build` ✅.
+- 2026-03-18 Components lock sync: upgraded `@ansiversa/components` to `^0.0.169` and refreshed the lockfile for the pre-launch ecosystem lock. Verification: `npm run typecheck` ✅, `npm run build` ✅.
 - 2026-03-01 Live-app shared UI sync: upgraded `@ansiversa/components` to `^0.0.163` (or confirmed already aligned in `web`) and refreshed install state for this repo. Verification: `npm run build` ✅.
 - Keep newest first; include date and short summary.
 - 2026-02-28 Navbar About icon simplification rollout sync: upgraded `@ansiversa/components` to `^0.0.154` (lockfile refreshed) to consume shared About icon change from circled-info to plain `i` glyph; Sign in user icon and mini-app auth/menu behavior unchanged. Verification: `npm run build` ✅.
